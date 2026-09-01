@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/terca",
+      "schedule": "0 11 * * 2" 
+    },
+    {
+      "path": "/api/cron/quarta",
+      "schedule": "0 11 * * 3"
+    },
+    {
+      "path": "/api/cron/alertas",
+      "schedule": "0 11 * * *" 
+    }
+  ]
+}
