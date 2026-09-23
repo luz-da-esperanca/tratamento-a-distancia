@@ -1,10 +1,10 @@
 "use client"; // Necessário para usar hooks
 
-import { useActionState, useState, type ChangeEvent } from "react";
-import { CalendarDays, Hash, LockKeyhole, AlertCircle } from "lucide-react";
 import { SubmitButton } from "@/components/shared/SubmitButton";
 import { validarAcessoPaciente } from "@/src/features/appointments/presentation/actions/agendamentos.actions";
 import { formatDateMask, toISODate } from "@/src/shared/utils/mask";
+import { AlertCircle, CalendarDays, Hash, LockKeyhole } from "lucide-react";
+import { useActionState, useState, type ChangeEvent } from "react";
 
 export function TratamentoLoginCard() {
   // Inicializamos o hook passando a Action e o estado inicial (nulo)
@@ -63,7 +63,7 @@ export function TratamentoLoginCard() {
                 required
                 type="text"
                 inputMode="numeric"
-                placeholder="DD/MM/AAAA"
+                placeholder="dd/mm/aaaa"
                 maxLength={10}
                 className="bg-background border-neutral/20 focus:border-brand w-full text-foreground placeholder:text-foreground/50 input input-bordered"
                 value={nascimentoDisplay}

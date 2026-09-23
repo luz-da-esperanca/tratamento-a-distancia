@@ -4,23 +4,23 @@ export function HeroSection() {
   return (
     <section
       id="inicio"
-      className="flex items-start bg-linear-to-b from-brand to-background pt-8 min-h-screen hero"
+      className="flex items-start bg-linear-to-b from-brand to-background pt-8 min-h-screen hero scroll-mt-44 sm:scroll-mt-28"
       // style={{ backgroundImage: "url(https://img.daisyui.com/images/stock/photo-1507358522600-9f71e620c44e.webp)" }}
     >
       <div className="lg:items-center gap-8 grid lg:grid-cols-[1.3fr_0.9fr] mx-auto w-full max-w-7xl hero-content">
-        <div className="space-y-6">
+        <div className="space-y-6 max-sm:flex max-sm:flex-col max-sm:items-center max-sm:text-center">
           <span className="gap-2 bg-transparent border-background/40 text-background badge">
             <HeartHandshake size={14} />
             Tratamento e acolhimento
           </span>
-          <h1 className="max-w-3xl font-bold text-white text-shadow-lg text-4xl sm:text-5xl lg:text-6xl leading-tight">
+          <h1 className="max-w-3xl font-bold text-white text-shadow-lg text-4xl sm:text-5xl lg:text-6xl leading-tight max-sm:text-center">
             Tratamento Espiritual à Distância
           </h1>
           <p className="max-w-2xl text-foreground/90 text-base sm:text-lg leading-7">
             O Centro Espírita Luz da Esperança oferece tratamento por meio da oração e atendimentos virtuais. Participe das transmissões e receba amparo através de Evangelhoterapia, passes e vibrações sem sair de casa.
           </p>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 max-sm:justify-center">
             <a href="#inscricao" className="gap-2 bg-brand hover:bg-brand-hover border-brand hover:border-brand-hover text-background btn rounded-lg">
               Fazer inscrição
               <ArrowRight size={16} /> 
@@ -31,18 +31,18 @@ export function HeroSection() {
             </a>
           </div>
 
-          <div className="gap-4 grid sm:grid-cols-3">
-            <div className="bg-card/80 shadow-sm p-4 border border-neutral/15 rounded-2xl">
-              <p className="flex items-center gap-2 text-neutral text-sm"><BadgeCheck size={16} />Modalidade</p>
-              <p className="mt-2 font-semibold text-foreground text-2xl">100% Virtual</p>
+          <div className="gap-4 grid sm:grid-cols-3 max-sm:gap-2.5 max-sm:w-[85%] max-sm:mx-auto">
+            <div className="bg-card/80 shadow-sm p-4 border border-neutral/15 rounded-2xl max-sm:p-3 max-sm:py-2.5 max-sm:rounded-xl max-sm:w-full">
+              <p className="flex items-center gap-2 text-neutral text-sm max-sm:justify-center max-sm:text-center"><BadgeCheck size={16} />Modalidade</p>
+              <p className="mt-2 font-semibold text-foreground text-2xl max-sm:text-center max-sm:text-xl max-sm:mt-1.5">100% Virtual</p>
             </div>
-            <div className="bg-card/80 shadow-sm p-4 border border-neutral/15 rounded-2xl">
-              <p className="flex items-center gap-2 text-neutral text-sm"><Sparkles size={16} />Transmissões</p>
-              <p className="mt-2 font-semibold text-foreground text-2xl">Seg, Ter e Qua</p>
+            <div className="bg-card/80 shadow-sm p-4 border border-neutral/15 rounded-2xl max-sm:p-3 max-sm:py-2.5 max-sm:rounded-xl max-sm:w-full">
+              <p className="flex items-center gap-2 text-neutral text-sm max-sm:justify-center max-sm:text-center"><Sparkles size={16} />Transmissões</p>
+              <p className="mt-2 font-semibold text-foreground text-2xl max-sm:text-center max-sm:text-xl max-sm:mt-1.5">Seg, Ter e Qua</p>
             </div>
-            <div className="bg-card/80 shadow-sm p-4 border border-neutral/15 rounded-2xl">
-              <p className="flex items-center gap-2 text-neutral text-sm"><HeartHandshake size={16} />Início</p>
-              <p className="mt-2 font-semibold text-foreground text-2xl">Às 19:30</p>
+            <div className="bg-card/80 shadow-sm p-4 border border-neutral/15 rounded-2xl max-sm:p-3 max-sm:py-2.5 max-sm:rounded-xl max-sm:w-full">
+              <p className="flex items-center gap-2 text-neutral text-sm max-sm:justify-center max-sm:text-center"><HeartHandshake size={16} />Início</p>
+              <p className="mt-2 font-semibold text-foreground text-2xl max-sm:text-center max-sm:text-xl max-sm:mt-1.5">Às 19:30</p>
             </div>
           </div>
         </div>

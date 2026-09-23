@@ -39,7 +39,7 @@ const faqItems = [
 
 export function FaqSection() {
   return (
-    <section id="faq" className="relative flex items-center px-4 sm:px-6 lg:px-8 py-16 min-h-screen scroll-mt-24">
+    <section id="faq" className="relative flex items-center px-4 sm:px-6 lg:px-8 py-16 min-h-screen scroll-mt-44 sm:scroll-mt-24">
       {/* O gradiente agora consome a variável de background do seu :root para garantir consistência */}
       <div className="-z-10 absolute inset-0 bg-[linear-gradient(180deg,var(--background)_0%,#F7F4EE_100%)]" />
 

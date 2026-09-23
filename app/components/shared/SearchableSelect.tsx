@@ -70,14 +70,22 @@ export function SearchableSelect({
 
   useEffect(() => {
     if (!open) return;
-    function close() {
+    function onScroll(event: Event) {
+      // Ignora scroll originado dentro do popover (lista interna) —
+      // senão deslizar a lista fecha o select no meio do gesto.
+      if (popoverRef.current?.contains(event.target as Node)) {
+        return;
+      }
       setOpen(false);
     }
-    window.addEventListener("scroll", close, true);
-    window.addEventListener("resize", close);
+    function onResize() {
+      setOpen(false);
+    }
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onResize);
     return () => {
-      window.removeEventListener("scroll", close, true);
-      window.removeEventListener("resize", close);
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onResize);
     };
   }, [open]);
 
@@ -93,10 +101,10 @@ export function SearchableSelect({
     : options;
 
   const wrapperClass = bordered
-    ? `relative w-full max-w-[20rem] ${className}`
+    ? `relative w-full sm:max-w-[20rem] ${className}`
     : `relative ${className}`;
   const triggerClass = bordered
-  ? `input input-bordered bg-background text-foreground placeholder:text-neutral/60 pr-9 cursor-pointer ${
+  ? `input input-bordered w-full bg-background text-foreground placeholder:text-neutral/60 pr-9 cursor-pointer ${
       hasError
         ? "border-error focus:border-error"
         : "border-neutral/20 focus:border-brand"
@@ -152,7 +160,7 @@ export function SearchableSelect({
               placeholder={searchPlaceholder}
               className="px-3 py-2 w-full text-foreground placeholder:text-neutral/60 outline-none border-b border-neutral/15"
             />
-            <ul role="listbox" id={listId} className="max-h-60 overflow-y-auto">
+            <ul role="listbox" id={listId} className="max-h-60 overflow-y-auto overscroll-contain">
               {filtered.length === 0 && (
                 <li className="px-3 py-2 text-neutral text-sm">Nenhum resultado</li>
               )}
