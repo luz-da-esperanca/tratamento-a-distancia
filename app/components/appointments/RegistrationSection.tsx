@@ -8,10 +8,9 @@ import {
     salvarAgendamento,
 } from "@/src/features/appointments/presentation/actions/inscricao.actions";
 import {
-  validateStep,
-  type FormErrors,
+    validateStep,
+    type FormErrors,
 } from "@/src/features/appointments/presentation/utils/formValidation";
-import { formatPhoneDisplay } from "@/src/shared/utils/phone";
 import {
     codeByName,
     countries,
@@ -23,6 +22,7 @@ import {
     isNascimentoValido,
     toISODate,
 } from "@/src/shared/utils/mask";
+import { formatPhoneDisplay } from "@/src/shared/utils/phone";
 import {
     ArrowLeft,
     ArrowRight,
@@ -152,7 +152,7 @@ export function RegistrationSection() {
     return (
       <section
         id="inscricao"
-        className="flex flex-col justify-center items-center p-8 min-h-[60vh] scroll-mt-35"
+        className="flex flex-col justify-center items-center p-8 min-h-[60vh] scroll-mt-44 sm:scroll-mt-35"
       >
         <div className="bg-card shadow-lg p-10 border border-brand/20 rounded-3xl w-full max-w-md text-center">
           <div className="flex justify-center items-center bg-brand/10 mx-auto mb-6 rounded-full w-20 h-20 text-brand">
@@ -194,7 +194,7 @@ export function RegistrationSection() {
   return (
     <section
       id="inscricao"
-      className="relative flex items-center p-8 min-h-screen overflow-hidden scroll-mt-10"
+      className="relative flex items-center p-8 min-h-screen overflow-hidden scroll-mt-44 sm:scroll-mt-24"
     >
       <div className="-z-10 absolute inset-0 bg-[linear-gradient(180deg,var(--background)_0%,#F5F1EA_55%,var(--background)_100%)]" />
 
@@ -230,16 +230,16 @@ export function RegistrationSection() {
                 {erro}
               </div>
             )}
-            <div className="flex flex-wrap justify-between items-start gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-between sm:items-start">
               <p className="flex items-center gap-2 text-brand text-sm uppercase tracking-[0.25em]">
                 <ClipboardList size={14} />
                 Inscrição
               </p>
-              <ul className="steps steps-vertical lg:steps-horizontal">
+              <ul className="steps steps-horizontal max-sm:mx-auto">
                 {stepLabels.map((label, index) => (
                   <li
                     key={label}
-                    className={`step ${index <= step ? "step-primary text-brand font-semibold" : "text-neutral font-extralight"}`}
+                    className={`step ${index <= step ? "text-brand font-semibold [--step-bg:var(--brand)] [--step-fg:var(--background)]" : "text-neutral font-extralight"}`}
                   >
                     {label}
                   </li>
@@ -261,7 +261,7 @@ export function RegistrationSection() {
                     <input
                       required
                       aria-invalid={!!errors.nomeCompleto}
-                      className={`bg-background text-foreground placeholder:text-neutral/60 input input-bordered ${
+                      className={`bg-background text-foreground placeholder:text-neutral/60 input input-bordered w-full ${
                         errors.nomeCompleto
                           ? "border-error focus:border-error"
                           : "border-neutral/20 focus:border-brand"
@@ -284,9 +284,9 @@ export function RegistrationSection() {
                       aria-invalid={!!errors.dataNascimento}
                       type="text"
                       inputMode="numeric"
-                      placeholder="DD/MM/AAAA"
+                      placeholder="dd/mm/aaaa"
                       maxLength={10}
-                      className={`bg-background text-foreground placeholder:text-neutral/60 input input-bordered ${
+                      className={`bg-background text-foreground placeholder:text-neutral/60 input input-bordered w-full ${
                         errors.dataNascimento
                           ? "border-error focus:border-error"
                           : "border-neutral/20 focus:border-brand"
@@ -332,7 +332,7 @@ export function RegistrationSection() {
                     ) : (
                       <input
                         aria-invalid={!!errors.estado}
-                        className={`bg-background text-foreground placeholder:text-neutral/60 input input-bordered ${
+                        className={`bg-background text-foreground placeholder:text-neutral/60 input input-bordered w-full ${
                           errors.estado
                             ? "border-error focus:border-error"
                             : "border-neutral/20 focus:border-brand"
@@ -355,7 +355,7 @@ export function RegistrationSection() {
                       required
                       aria-invalid={!!errors.cidade}
                       autoComplete="address-level2"
-                      className={`bg-background text-foreground placeholder:text-neutral/60 input input-bordered ${
+                      className={`bg-background text-foreground placeholder:text-neutral/60 input input-bordered w-full ${
                         errors.cidade
                           ? "border-error focus:border-error"
                           : "border-neutral/20 focus:border-brand"
@@ -376,7 +376,7 @@ export function RegistrationSection() {
                     <input
                       required
                       aria-invalid={!!errors.endereco}
-                      className={`bg-background text-foreground placeholder:text-neutral/60 input input-bordered ${
+                      className={`bg-background text-foreground placeholder:text-neutral/60 input input-bordered w-full ${
                         errors.endereco
                           ? "border-error focus:border-error"
                           : "border-neutral/20 focus:border-brand"
@@ -396,7 +396,7 @@ export function RegistrationSection() {
                       Nome do solicitante (Opcional)
                     </span>
                     <input
-                      className="bg-background border-neutral/20 focus:border-brand text-foreground placeholder:text-neutral/60 input input-bordered"
+                      className="bg-background border-neutral/20 focus:border-brand text-foreground placeholder:text-neutral/60 input input-bordered w-full"
                       placeholder="Ex.: Irmã Ana"
                       value={formData.nomeSolicitante}
                       onChange={updateField("nomeSolicitante")}
@@ -421,7 +421,7 @@ export function RegistrationSection() {
                           : undefined
                       }
                       type="email"
-                      className={`bg-background text-foreground placeholder:text-neutral/60 input input-bordered ${
+                      className={`bg-background text-foreground placeholder:text-neutral/60 input input-bordered w-full ${
                         errors.emailNotificacao
                           ? "border-error focus:border-error"
                           : "border-neutral/20 focus:border-brand"

@@ -67,7 +67,7 @@ export function PhoneField({
       value={value}
       onChange={(newValue) => onChange(newValue ?? "")}
       countrySelectComponent={PhoneCountrySelect}
-      className={`phone-input-custom input input-bordered bg-background flex items-center gap-1 text-foreground pl-1 ${
+      className={`phone-input-custom input input-bordered w-full bg-background flex items-center gap-1 text-foreground pl-1 ${
         hasError
           ? "border-error focus:border-error"
           : "border-neutral/20 focus:border-brand"
