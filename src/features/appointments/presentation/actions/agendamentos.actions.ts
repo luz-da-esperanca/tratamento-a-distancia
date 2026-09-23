@@ -12,6 +12,12 @@ import { makeDeleteAppointmentUseCase } from '@/src/shared/infrastructure/compos
 import { makeValidatePatientAccessUseCase } from '@/src/shared/infrastructure/composition/container';
 import { makeGetAppointmentByProtocolUseCase } from '@/src/shared/infrastructure/composition/container';
 import { toAppError } from '@/src/shared/domain/errors';
+import { requireAdmin } from '@/src/shared/infrastructure/auth/requireAdmin';
+import {
+  PACIENTE_SESSION_COOKIE,
+  PACIENTE_SESSION_MAX_AGE_SECONDS,
+  createPacienteSession,
+} from '@/src/shared/infrastructure/security/pacienteSession';
 
 interface AppointmentItem {
   appointment: Appointment;
@@ -59,6 +65,7 @@ function toLegacyAgendamento(item: AppointmentItem): Agendamento {
 
 export async function buscarAgendamentos(): Promise<Agendamento[]> {
   try {
+    await requireAdmin();
     const useCase = await makeListAppointmentsUseCase();
     const { itens } = await useCase.execute();
     return itens.map(toLegacyAgendamento);
@@ -73,6 +80,7 @@ export async function atualizarAgendamento(
   dados: Partial<Agendamento>,
 ): Promise<{ sucesso: boolean; erro?: string }> {
   try {
+    await requireAdmin();
     const useCase = await makeUpdateAppointmentUseCase();
 
     await useCase.execute({
@@ -102,6 +110,7 @@ export async function excluirAgendamento(
   pacienteId: string,
 ): Promise<{ sucesso: boolean; erro?: string }> {
   try {
+    await requireAdmin();
     const useCase = await makeDeleteAppointmentUseCase();
     await useCase.execute({ protocolo, pacienteId });
     revalidatePath('/admin/painel');
@@ -128,11 +137,13 @@ export async function validarAcessoPaciente(prevState: { erro?: string } | null,
   }
 
   const cookieStore = await cookies();
-  cookieStore.set('paciente_session', protocolo, {
+  const sessionValue = createPacienteSession(protocolo);
+  cookieStore.set(PACIENTE_SESSION_COOKIE, sessionValue, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 2,
-    path: '/',
+    maxAge: PACIENTE_SESSION_MAX_AGE_SECONDS,
+    path: '/tratamento',
+    sameSite: 'strict',
   });
 
   redirect(`/tratamento/${protocolo}`);

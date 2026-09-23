@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto';
 import { DomainError } from '@/src/shared/domain/errors';
 
 const PROTOCOLO_REGEX = /^AGD-\d{4}-\d{4}$/;
@@ -14,7 +15,7 @@ export class Protocolo {
   }
 
   static gerar(ano: number): Protocolo {
-    const sequencial = String(Math.floor(1000 + Math.random() * 9000));
+    const sequencial = String(randomInt(1000, 10000));
     return new Protocolo(`AGD-${ano}-${sequencial}`);
   }
 

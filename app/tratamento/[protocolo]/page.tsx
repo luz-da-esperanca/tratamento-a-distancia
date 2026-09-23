@@ -3,6 +3,7 @@ import { TreatmentInstructions } from "@/components/appointments/TreatmentInstru
 import { Footer } from "@/components/shared/Footer";
 import { Header } from "@/components/shared/Header";
 import { buscarAgendamentoPorProtocolo } from "@/src/features/appointments/presentation/actions/agendamentos.actions";
+import { PACIENTE_SESSION_COOKIE, verifyPacienteSession } from "@/src/shared/infrastructure/security/pacienteSession";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
@@ -15,12 +16,10 @@ export default async function ProtocolPage({ params }: PageProps) {
 
   
   const cookieStore = await cookies();
-  const session = cookieStore.get("paciente_session")?.value;
+  const session = cookieStore.get(PACIENTE_SESSION_COOKIE)?.value;
 
-  
-  if (!session || session !== protocolo) {
-    
-    redirect("/tratamento"); 
+  if (!verifyPacienteSession(session, protocolo)) {
+    redirect("/tratamento");
   }
   
   const agendamento = await buscarAgendamentoPorProtocolo(protocolo);

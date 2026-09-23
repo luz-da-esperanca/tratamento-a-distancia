@@ -1,6 +1,7 @@
 import type { AuthGateway, AdminSession } from '../../domain/gateways/AuthGateway';
 import { InvalidCredentialsError } from '../../domain/errors/AuthErrors';
 import { failure, ok } from '@/src/shared/domain/Result';
+import { getAdminEnv } from '@/src/shared/infrastructure/config/env';
 import { createServerSupabaseClient } from '@/src/shared/infrastructure/database/supabase/server';
 
 export class SupabaseAuthGateway implements AuthGateway {
@@ -13,6 +14,13 @@ export class SupabaseAuthGateway implements AuthGateway {
     });
 
     if (error || !data.user) {
+      return failure(new InvalidCredentialsError());
+    }
+
+    const userEmail = (data.user.email ?? '').trim().toLowerCase();
+    const allowed = getAdminEnv().ADMIN_ALLOWED_EMAILS;
+    if (!userEmail || !allowed.includes(userEmail)) {
+      await supabase.auth.signOut();
       return failure(new InvalidCredentialsError());
     }
 
