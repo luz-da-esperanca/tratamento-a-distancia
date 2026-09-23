@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { ConflictError } from '@/src/shared/domain/errors';
 import type { OpcaoWhatsApp } from '@/types/database';
 import { Patient } from '@/src/features/patients/domain/entities/Patient';
 import type { PatientRepository } from '@/src/features/patients/domain/repositories/PatientRepository';
@@ -30,6 +31,8 @@ export interface CreateAppointmentOutput {
 }
 
 export class CreateAppointmentUseCase {
+  static readonly MAX_PROTOCOLO_ATTEMPTS = 5;
+
   constructor(
     private readonly patientRepository: PatientRepository,
     private readonly appointmentRepository: AppointmentRepository,
@@ -52,8 +55,6 @@ export class CreateAppointmentUseCase {
 
     await this.patientRepository.save(paciente);
 
-    const protocolo = Protocolo.gerar(dataCadastro.getFullYear());
-
     const dataCirurgia =
       input.tipo === 'TRATAMENTO_COM_CIRURGIA' ? validarAntecedencia15Dias(dataCadastro) : undefined;
 
@@ -61,41 +62,59 @@ export class CreateAppointmentUseCase {
       input.nomeSolicitante.trim() !== '' &&
       input.nomeSolicitante.trim().toLowerCase() !== input.nomeCompleto.trim().toLowerCase();
 
-    const agendamento = Appointment.criar({
-      id: protocolo.valor,
-      protocolo,
-      pacienteId,
-      dataCadastro,
-      status: 'AGENDADO',
-      emailNotificacao: input.emailNotificacao,
-      celular: input.celular,
-      tipoWhatsapp: input.tipoWhatsApp,
-      whatsappAuxiliar: input.tipoWhatsApp === 'OUTRO_NUMERO' ? input.whatsappAuxiliar : undefined,
-      ehIntercessorio,
-      nomeSolicitante: input.nomeSolicitante || 'Próprio',
-      enviouEmailTerca: false,
-      enviouEmailQuarta: false,
-      tipo: input.tipo,
-      dataCirurgia,
-    });
+    let lastConflict: unknown = null;
 
-    await this.appointmentRepository.save(agendamento);
+    for (let attempt = 0; attempt < CreateAppointmentUseCase.MAX_PROTOCOLO_ATTEMPTS; attempt += 1) {
+      const protocolo = Protocolo.gerar(dataCadastro.getFullYear());
 
-    const email = buildConfirmationEmail({
-      protocolo: protocolo.valor,
-      tipo: input.tipo,
-      dataCadastro,
-      dataCirurgia,
-      dataNascimento: input.dataNascimento,
-    });
+      const agendamento = Appointment.criar({
+        id: protocolo.valor,
+        protocolo,
+        pacienteId,
+        dataCadastro,
+        status: 'AGENDADO',
+        emailNotificacao: input.emailNotificacao,
+        celular: input.celular,
+        tipoWhatsapp: input.tipoWhatsApp,
+        whatsappAuxiliar: input.tipoWhatsApp === 'OUTRO_NUMERO' ? input.whatsappAuxiliar : undefined,
+        ehIntercessorio,
+        nomeSolicitante: input.nomeSolicitante || 'Próprio',
+        enviouEmailTerca: false,
+        enviouEmailQuarta: false,
+        tipo: input.tipo,
+        dataCirurgia,
+      });
 
-    const emailResult = await this.emailGateway.send({
-      para: input.emailNotificacao,
-      assunto: email.assunto,
-      corpoHtml: email.corpoHtml,
-      replyTo: email.replyTo,
-    });
+      try {
+        await this.appointmentRepository.save(agendamento);
+      } catch (error) {
+        if (error instanceof ConflictError) {
+          lastConflict = error;
+          continue;
+        }
+        throw error;
+      }
 
-    return { protocolo: protocolo.valor, emailEnviado: emailResult.ok };
+      const email = buildConfirmationEmail({
+        protocolo: protocolo.valor,
+        tipo: input.tipo,
+        dataCadastro,
+        dataCirurgia,
+        dataNascimento: input.dataNascimento,
+      });
+
+      const emailResult = await this.emailGateway.send({
+        para: input.emailNotificacao,
+        assunto: email.assunto,
+        corpoHtml: email.corpoHtml,
+        replyTo: email.replyTo,
+      });
+
+      return { protocolo: protocolo.valor, emailEnviado: emailResult.ok };
+    }
+
+    throw lastConflict instanceof ConflictError
+      ? lastConflict
+      : new ConflictError();
   }
 }

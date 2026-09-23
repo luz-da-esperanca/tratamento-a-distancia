@@ -19,7 +19,7 @@ import { SendSurgeryAlertsUseCase } from '@/src/features/emails/application/use-
 import { LoginAdminUseCase } from '@/src/features/auth/application/use-cases/LoginAdminUseCase';
 import { LogoutAdminUseCase } from '@/src/features/auth/application/use-cases/LogoutAdminUseCase';
 
-// Cadastro público e acesso de paciente: client do servidor (anon, respeita RLS)
+// Cadastro público: client do servidor (anon, respeita RLS - apenas INSERT público)
 export async function makeCreateAppointmentUseCase() {
   const client = await createServerSupabaseClient();
   return new CreateAppointmentUseCase(
@@ -29,8 +29,10 @@ export async function makeCreateAppointmentUseCase() {
   );
 }
 
+// Validação do paciente e leitura por protocolo: server-side com service_role
+// (anon SELECT foi removido; nunca expõe SELECT geral para anon)
 export async function makeValidatePatientAccessUseCase() {
-  const client = await createServerSupabaseClient();
+  const client = createAdminSupabaseClient();
   return new ValidatePatientAccessUseCase(
     new SupabaseAppointmentRepository(client),
     new SupabasePatientRepository(client),
@@ -38,7 +40,7 @@ export async function makeValidatePatientAccessUseCase() {
 }
 
 export async function makeListAppointmentsUseCase() {
-  const client = await createServerSupabaseClient();
+  const client = createAdminSupabaseClient();
   return new ListAppointmentsUseCase(
     new SupabaseAppointmentRepository(client),
     new SupabasePatientRepository(client),
@@ -46,12 +48,12 @@ export async function makeListAppointmentsUseCase() {
 }
 
 export async function makeUpdateAppointmentUseCase() {
-  const client = await createServerSupabaseClient();
+  const client = createAdminSupabaseClient();
   return new UpdateAppointmentUseCase(new SupabaseAppointmentRepository(client));
 }
 
 export async function makeDeleteAppointmentUseCase() {
-  const client = await createServerSupabaseClient();
+  const client = createAdminSupabaseClient();
   return new DeleteAppointmentUseCase(
     new SupabaseAppointmentRepository(client),
     new SupabasePatientRepository(client),
@@ -59,16 +61,16 @@ export async function makeDeleteAppointmentUseCase() {
 }
 
 export async function makeGetAppointmentByProtocolUseCase() {
-  const client = await createServerSupabaseClient();
+  const client = createAdminSupabaseClient();
   return new GetAppointmentByProtocolUseCase(
     new SupabaseAppointmentRepository(client),
     new SupabasePatientRepository(client),
   );
 }
 
-// Admin (sessão do usuário autenticado)
+// Admin (após requireAdmin): service_role server-side, RLS fechado para anon/authenticated comum
 export async function makeSaveEmailTemplatesUseCase() {
-  const client = await createServerSupabaseClient();
+  const client = createAdminSupabaseClient();
   return new SaveEmailTemplatesUseCase(
     new SupabaseEmailTemplateRepository(client),
     new SupabaseAppointmentRepository(client),
@@ -76,7 +78,7 @@ export async function makeSaveEmailTemplatesUseCase() {
 }
 
 export async function makeSendSpecificAlertUseCase() {
-  const client = await createServerSupabaseClient();
+  const client = createAdminSupabaseClient();
   return new SendSpecificAlertUseCase(
     new SupabaseAppointmentRepository(client),
     new SupabaseEmailTemplateRepository(client),
