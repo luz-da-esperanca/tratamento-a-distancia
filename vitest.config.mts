@@ -3,9 +3,15 @@ import path from 'node:path';
 
 export default defineConfig({
   resolve: {
-    alias: {
-      '@': path.resolve(import.meta.dirname),
-    },
+    // Espelha tsconfig paths: o mapeamento específico precisa vir antes
+    // do genérico para vencer na resolução por prefixo.
+    alias: [
+      {
+        find: '@/components',
+        replacement: path.resolve(import.meta.dirname, 'app/components'),
+      },
+      { find: '@', replacement: path.resolve(import.meta.dirname) },
+    ],
   },
   test: {
     environment: 'node',
