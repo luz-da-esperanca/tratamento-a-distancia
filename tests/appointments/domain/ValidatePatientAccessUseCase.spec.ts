@@ -1,52 +1,30 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ValidatePatientAccessUseCase } from '@/src/features/appointments/application/use-cases/ValidatePatientAccessUseCase';
-import type { AppointmentRepository } from '@/src/features/appointments/domain/repositories/AppointmentRepository';
-import type { PatientRepository } from '@/src/features/patients/domain/repositories/PatientRepository';
-import { Appointment } from '@/src/features/appointments/domain/entities/Appointment';
-import { Patient } from '@/src/features/patients/domain/entities/Patient';
-import { Protocolo } from '@/src/features/appointments/domain/value-objects/Protocolo';
 import { InvalidAccessError } from '@/src/features/appointments/domain/errors/AppointmentErrors';
+import {
+  makeAppointment,
+  makePatient,
+  makeProtocolo,
+  defaultAppointmentRepo,
+  defaultPatientRepo,
+} from '@/tests/helpers/factories';
 
-function makeAppointment(protocolo: string) {
-  return Appointment.reconstituir({
-    id: protocolo,
-    protocolo: Protocolo.criar(protocolo),
-    pacienteId: 'pid',
-    dataCadastro: new Date(),
-    status: 'AGENDADO',
-    emailNotificacao: 'a@b.com',
-    celular: '11999999999',
-    tipoWhatsapp: 'E_WHATSAPP',
-    ehIntercessorio: false,
-    nomeSolicitante: 'X',
-    enviouEmailTerca: false,
-    enviouEmailQuarta: false,
-    tipo: 'TRATAMENTO_SEM_CIRURGIA',
-  });
+function appointmentComProtocolo(protocolo: string) {
+  return makeAppointment({ id: protocolo, protocolo: makeProtocolo(protocolo) });
 }
 
-function makePatient(dataNascimento: string) {
-  return Patient.reconstituir({
-    id: 'pid',
-    nomeCompleto: 'Ana',
-    dataNascimento: new Date(`${dataNascimento}T12:00:00`),
-    pais: 'B',
-    estado: 'SP',
-    cidade: 'C',
-    endereco: 'R',
-  });
+function patientNascidoEm(dataNascimento: string) {
+  return makePatient({ dataNascimento: new Date(`${dataNascimento}T12:00:00`) });
 }
 
 describe('ValidatePatientAccessUseCase', () => {
   it('retorna o agendamento quando protocolo e nascimento conferem', async () => {
-    const appointmentRepo: AppointmentRepository = {
-      ...defaultAppointmentRepo(),
-      findByProtocol: vi.fn(async () => makeAppointment('AGD-2026-1234')),
-    };
-    const patientRepo: PatientRepository = {
-      ...defaultPatientRepo(),
-      findById: vi.fn(async () => makePatient('1990-05-10')),
-    };
+    const appointmentRepo = defaultAppointmentRepo({
+      findByProtocol: vi.fn(async () => appointmentComProtocolo('AGD-2026-1234')),
+    });
+    const patientRepo = defaultPatientRepo({
+      findById: vi.fn(async () => patientNascidoEm('1990-05-10')),
+    });
 
     const useCase = new ValidatePatientAccessUseCase(appointmentRepo, patientRepo);
     const result = await useCase.execute({ protocolo: 'AGD-2026-1234', dataNascimento: '1990-05-10' });
@@ -55,14 +33,12 @@ describe('ValidatePatientAccessUseCase', () => {
   });
 
   it('lança InvalidAccessError quando o nascimento não confere', async () => {
-    const appointmentRepo: AppointmentRepository = {
-      ...defaultAppointmentRepo(),
-      findByProtocol: vi.fn(async () => makeAppointment('AGD-2026-1234')),
-    };
-    const patientRepo: PatientRepository = {
-      ...defaultPatientRepo(),
-      findById: vi.fn(async () => makePatient('1990-05-10')),
-    };
+    const appointmentRepo = defaultAppointmentRepo({
+      findByProtocol: vi.fn(async () => appointmentComProtocolo('AGD-2026-1234')),
+    });
+    const patientRepo = defaultPatientRepo({
+      findById: vi.fn(async () => patientNascidoEm('1990-05-10')),
+    });
 
     const useCase = new ValidatePatientAccessUseCase(appointmentRepo, patientRepo);
 
@@ -70,25 +46,49 @@ describe('ValidatePatientAccessUseCase', () => {
       useCase.execute({ protocolo: 'AGD-2026-1234', dataNascimento: '2000-01-01' }),
     ).rejects.toBeInstanceOf(InvalidAccessError);
   });
+
+  it('lança InvalidAccessError quando o protocolo não existe', async () => {
+    const appointmentRepo = defaultAppointmentRepo({
+      findByProtocol: vi.fn(async () => null),
+    });
+    const patientRepo = defaultPatientRepo({
+      findById: vi.fn(async () => patientNascidoEm('1990-05-10')),
+    });
+
+    const useCase = new ValidatePatientAccessUseCase(appointmentRepo, patientRepo);
+
+    await expect(
+      useCase.execute({ protocolo: 'AGD-2026-9999', dataNascimento: '1990-05-10' }),
+    ).rejects.toBeInstanceOf(InvalidAccessError);
+    expect(vi.mocked(patientRepo.findById)).not.toHaveBeenCalled();
+  });
+
+  it('lança InvalidAccessError quando o paciente vinculado não existe (anti-enumeração)', async () => {
+    const appointmentRepo = defaultAppointmentRepo({
+      findByProtocol: vi.fn(async () => appointmentComProtocolo('AGD-2026-1234')),
+    });
+    const patientRepo = defaultPatientRepo({
+      findById: vi.fn(async () => null),
+    });
+
+    const useCase = new ValidatePatientAccessUseCase(appointmentRepo, patientRepo);
+
+    await expect(
+      useCase.execute({ protocolo: 'AGD-2026-1234', dataNascimento: '1990-05-10' }),
+    ).rejects.toBeInstanceOf(InvalidAccessError);
+  });
+
+  it('protocolo malformado rejeita antes de consultar (não vaza existência)', async () => {
+    const appointmentRepo = defaultAppointmentRepo({
+      findByProtocol: vi.fn(async () => appointmentComProtocolo('AGD-2026-1234')),
+    });
+    const patientRepo = defaultPatientRepo();
+
+    const useCase = new ValidatePatientAccessUseCase(appointmentRepo, patientRepo);
+
+    await expect(
+      useCase.execute({ protocolo: 'INVALIDO', dataNascimento: '1990-05-10' }),
+    ).rejects.toThrow();
+    expect(vi.mocked(appointmentRepo.findByProtocol)).not.toHaveBeenCalled();
+  });
 });
-
-function defaultAppointmentRepo(): AppointmentRepository {
-  return {
-    save: vi.fn(async () => {}),
-    findByProtocol: vi.fn(async () => null),
-    update: vi.fn(async () => {}),
-    delete: vi.fn(async () => {}),
-    list: vi.fn(async () => []),
-    findPendingRoutine: vi.fn(async () => []),
-    findUpcomingSurgeryAlerts: vi.fn(async () => []),
-    resetRoutineFlags: vi.fn(async () => {}),
-  };
-}
-
-function defaultPatientRepo(): PatientRepository {
-  return {
-    save: vi.fn(async () => {}),
-    findById: vi.fn(async () => null),
-    delete: vi.fn(async () => {}),
-  };
-}

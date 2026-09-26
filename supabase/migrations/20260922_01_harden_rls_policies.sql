@@ -1,6 +1,6 @@
--- P0.1: fecha RLS para anon SELECT e authenticated CRUD administrativo.
--- Mantém apenas INSERT público necessário ao cadastro.
--- Idempotente: usa IF EXISTS, sem CREATE substituta permissiva.
+-- Autorização administrativa passa a ser feita na aplicação
+-- (allowlist ADMIN_ALLOWED_EMAILS + service_role server-side) e o acesso
+-- do paciente via validação server-side (protocolo + data de nascimento).
 
 DROP POLICY IF EXISTS "Admin tem controle total sobre pacientes" ON pacientes;
 DROP POLICY IF EXISTS "Admin tem controle total sobre agendamentos" ON agendamentos;

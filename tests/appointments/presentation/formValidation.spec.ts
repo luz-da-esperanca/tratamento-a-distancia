@@ -48,8 +48,9 @@ describe("validateStep", () => {
     expect(validateStep(1, base).whatsappAuxiliar).toBeUndefined();
   });
 
-  it("etapa 1 não exige celular, mas valida formato quando preenchido", () => {
-    expect(validateStep(1, { ...base, celular: "" }).celular).toBeUndefined();
+  it("etapa 1 exige celular e valida formato", () => {
+    expect(validateStep(1, { ...base, celular: "" }).celular).toBe("Informe o número de celular.");
     expect(validateStep(1, { ...base, celular: "+123" }).celular).toBeTruthy();
+    expect(validateStep(1, { ...base, celular: "+5585988888888" }).celular).toBeUndefined();
   });
 });

@@ -166,13 +166,17 @@ npm run build && npm start
 
 ## Banco de dados
 
-- **Schema inicial:** `database.sql` — enums (`status_agendamento`, `opcao_whatsapp`, `tipo_email`,
+Fonte de verdade: `supabase/migrations/` (ordem numérica) — ver `supabase/README.md`.
+
+- **Snapshot inicial:** `database.sql` — enums (`status_agendamento`, `opcao_whatsapp`, `tipo_email`,
   `tipo_tratamento`), tabelas `pacientes` (`id UUID`), `agendamentos` (`protocolo VARCHAR PK`,
   `paciente_id FK CASCADE`, flags `enviou_email_terca/quarta`, `data_cirurgia`) e `template_emails`,
-  com RLS habilitado.
-- **Migration P0.1:** `supabase/migrations/20260922_p0_1_close_rls.sql` — remove `SELECT` público
-  (`anon`) e CRUD administrativo via RLS para `authenticated` comum, mantendo apenas o `INSERT`
-  público do cadastro. Rode via Supabase SQL Editor ou `supabase db push`.
+  com RLS habilitado. Somente leitura/documentação.
+- **Migrations (aplicar nesta ordem via SQL Editor):**
+  1. `supabase/migrations/20260922_00_init_schema.sql` — snapshot inicial idempotente;
+  2. `supabase/migrations/20260922_01_harden_rls_policies.sql` — remove `SELECT` público
+     (`anon`) e CRUD administrativo via RLS para `authenticated` comum, mantendo apenas o `INSERT`
+     público do cadastro.
 
 ---
 
