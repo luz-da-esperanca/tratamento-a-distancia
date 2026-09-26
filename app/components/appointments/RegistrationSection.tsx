@@ -64,6 +64,8 @@ export function RegistrationSection() {
   const [erro, setErro] = useState<string | null>(null);
   const [nascimentoDisplay, setNascimentoDisplay] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
+  // Guarda o estado digitado/selecionado de cada país para restaurar ao trocar.
+  const [estadoPorPais, setEstadoPorPais] = useState<Record<string, string>>({});
 
   const clearError = (field: keyof FormInscricao) =>
     setErrors((current) => {
@@ -73,13 +75,45 @@ export function RegistrationSection() {
       return next;
     });
 
+  const guardarEstadoDoPaisAtual = (paisAtual: string, estadoAtual: string) => {
+    if (!paisAtual || !estadoAtual) return;
+    setEstadoPorPais((current) =>
+      current[paisAtual] === estadoAtual
+        ? current
+        : { ...current, [paisAtual]: estadoAtual },
+    );
+  };
+
   const handlePaisSelect = (pais: string) => {
-    setFormData((current) => ({ ...current, pais, estado: "" }));
+    guardarEstadoDoPaisAtual(formData.pais, formData.estado);
+    const codigo = codeByName[pais];
+    const salvo = estadoPorPais[pais] ?? "";
+    // Só restaura da lista quando o valor ainda existe nela; texto livre
+    // de país sem lista oficial é restaurado como está.
+    const restaurado =
+      hasStates(codigo) && salvo
+        ? getStates(codigo)?.some((option) => option.name === salvo)
+          ? salvo
+          : ""
+        : salvo;
+    setFormData((current) => ({ ...current, pais, estado: restaurado }));
     clearError("pais");
     clearError("estado");
   };
 
   const handleEstadoSelect = (estado: string) => {
+    if (formData.pais) {
+      setEstadoPorPais((current) => ({ ...current, [formData.pais]: estado }));
+    }
+    setFormData((current) => ({ ...current, estado }));
+    clearError("estado");
+  };
+
+  const handleEstadoLivreChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const estado = event.target.value;
+    if (formData.pais) {
+      setEstadoPorPais((current) => ({ ...current, [formData.pais]: estado }));
+    }
     setFormData((current) => ({ ...current, estado }));
     clearError("estado");
   };
@@ -329,18 +363,42 @@ export function RegistrationSection() {
                         searchPlaceholder="Digite o nome do estado..."
                         hasError={!!errors.estado}
                       />
+                    ) : !formData.pais ? (
+                      <>
+                        <input
+                          disabled
+                          readOnly
+                          aria-invalid={!!errors.estado}
+                          className={`bg-background text-foreground placeholder:text-neutral/60 input input-bordered w-full disabled:cursor-not-allowed disabled:opacity-60 ${
+                            errors.estado
+                              ? "border-error focus:border-error"
+                              : "border-neutral/20 focus:border-brand"
+                          }`}
+                          placeholder="Selecione primeiro o país"
+                          value=""
+                        />
+                        <p className="mt-1 text-neutral text-xs">
+                          Escolha o país para selecionar o estado.
+                        </p>
+                      </>
                     ) : (
-                      <input
-                        aria-invalid={!!errors.estado}
-                        className={`bg-background text-foreground placeholder:text-neutral/60 input input-bordered w-full ${
-                          errors.estado
-                            ? "border-error focus:border-error"
-                            : "border-neutral/20 focus:border-brand"
-                        }`}
-                        placeholder="Ex.: Piauí"
-                        value={formData.estado}
-                        onChange={updateField("estado")}
-                      />
+                      <>
+                        <input
+                          aria-invalid={!!errors.estado}
+                          className={`bg-background text-foreground placeholder:text-neutral/60 input input-bordered w-full ${
+                            errors.estado
+                              ? "border-error focus:border-error"
+                              : "border-neutral/20 focus:border-brand"
+                          }`}
+                          placeholder="Ex.: Piauí"
+                          value={formData.estado}
+                          onChange={handleEstadoLivreChange}
+                        />
+                        <p className="mt-1 text-neutral text-xs">
+                          Este país não possui lista oficial — digite o estado,
+                          província ou região.
+                        </p>
+                      </>
                     )}
                   </label>
                   <label className="flex flex-col form-control">

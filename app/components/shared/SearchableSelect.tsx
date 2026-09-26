@@ -101,7 +101,7 @@ export function SearchableSelect({
     : options;
 
   const wrapperClass = bordered
-    ? `relative w-full sm:max-w-[20rem] ${className}`
+    ? `relative w-full ${className}`
     : `relative ${className}`;
   const triggerClass = bordered
   ? `input input-bordered w-full bg-background text-foreground placeholder:text-neutral/60 pr-9 cursor-pointer ${
