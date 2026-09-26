@@ -1,32 +1,18 @@
 import { describe, it, expect, vi } from 'vitest';
 import { CreateAppointmentUseCase } from '@/src/features/appointments/application/use-cases/CreateAppointmentUseCase';
-import type { PatientRepository } from '@/src/features/patients/domain/repositories/PatientRepository';
-import type { AppointmentRepository } from '@/src/features/appointments/domain/repositories/AppointmentRepository';
-import type { EmailGateway } from '@/src/features/emails/domain/gateways/EmailGateway';
 import { Protocolo } from '@/src/features/appointments/domain/value-objects/Protocolo';
 import { ConflictError, RepositoryError } from '@/src/shared/domain/errors';
-import { ok } from '@/src/shared/domain/Result';
 import type { OpcaoWhatsApp } from '@/types/database';
+import {
+  defaultAppointmentRepo,
+  defaultPatientRepo,
+  okEmailGateway,
+} from '@/tests/helpers/factories';
 
 function buildFakes() {
-  const patientRepo: PatientRepository = {
-    save: vi.fn(async () => {}),
-    findById: vi.fn(async () => null),
-    delete: vi.fn(async () => {}),
-  };
-  const appointmentRepo: AppointmentRepository = {
-    save: vi.fn(async () => {}),
-    findByProtocol: vi.fn(async () => null),
-    update: vi.fn(async () => {}),
-    delete: vi.fn(async () => {}),
-    list: vi.fn(async () => []),
-    findPendingRoutine: vi.fn(async () => []),
-    findUpcomingSurgeryAlerts: vi.fn(async () => []),
-    resetRoutineFlags: vi.fn(async () => {}),
-  };
-  const emailGateway: EmailGateway = {
-    send: vi.fn(async () => ok({ id: 'x' })),
-  };
+  const patientRepo = defaultPatientRepo();
+  const appointmentRepo = defaultAppointmentRepo();
+  const emailGateway = okEmailGateway();
   return { patientRepo, appointmentRepo, emailGateway };
 }
 
