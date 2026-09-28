@@ -28,11 +28,11 @@ export function Footer() {
           </p>
           <p className="flex lg:justify-end items-center gap-2">
             <Phone size={16} className="text-brand" />
-            (86) 9XXXX-XXXX
+            (86) 9516-5179
           </p>
           <p className="flex lg:justify-end items-center gap-2 sm:col-span-2">
             <Mail size={16} className="text-brand" />
-            contato@luzdaesperanca.org
+            diretoria@luzdaesperanca.org
           </p>
         </div>
       </div>
