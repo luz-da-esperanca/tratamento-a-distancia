@@ -1,10 +1,10 @@
 import {
   getCountries,
   getCountryCallingCode,
-  isValidPhoneNumber,
   type Country,
 } from "react-phone-number-input";
 import { parsePhoneNumber } from "libphonenumber-js";
+export { isValidPhone } from "./phoneValidation";
 
 export interface CountryPhoneOption {
   code: Country;
@@ -36,15 +36,6 @@ export function getCountryOptions(): CountryPhoneOption[] {
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name, "pt"));
-}
-
-export function isValidPhone(value: string): boolean {
-  if (!value) return false;
-  try {
-    return isValidPhoneNumber(value);
-  } catch {
-    return false;
-  }
 }
 
 export function formatPhoneDisplay(value: string): string {

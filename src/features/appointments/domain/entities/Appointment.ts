@@ -1,6 +1,8 @@
-import { DomainError } from '@/src/shared/domain/errors';
+import { DomainError, ValidationError } from '@/src/shared/domain/errors';
 import { isStatusAgendamento, StatusAgendamento } from '../value-objects/StatusAgendamento';
 import { Protocolo } from '../value-objects/Protocolo';
+import { EmailAddress } from '@/src/features/emails/domain/value-objects/EmailAddress';
+import { isValidPhone } from '@/src/shared/utils/phoneValidation';
 
 export type TipoTratamento = 'TRATAMENTO_SEM_CIRURGIA' | 'TRATAMENTO_COM_CIRURGIA';
 
@@ -29,7 +31,19 @@ export class Appointment {
     if (!isStatusAgendamento(props.status)) {
       throw new DomainError('INVALID_APPOINTMENT_STATUS', `Status inválido: ${props.status}`);
     }
-    return new Appointment(props);
+    let emailNormalizado: string;
+    try {
+      emailNormalizado = EmailAddress.criar(props.emailNotificacao).valor;
+    } catch {
+      throw new ValidationError('Informe um e-mail de notificação válido.');
+    }
+    if (!isValidPhone(props.celular)) {
+      throw new ValidationError('Informe um número de celular válido.');
+    }
+    if (props.tipoWhatsapp === 'OUTRO_NUMERO' && !isValidPhone(props.whatsappAuxiliar ?? '')) {
+      throw new ValidationError('Informe um número de WhatsApp auxiliar válido.');
+    }
+    return new Appointment({ ...props, emailNotificacao: emailNormalizado });
   }
 
   static reconstituir(props: AppointmentProps): Appointment {

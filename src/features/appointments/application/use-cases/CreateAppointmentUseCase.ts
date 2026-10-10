@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { ConflictError } from '@/src/shared/domain/errors';
+import { ConflictError, ValidationError } from '@/src/shared/domain/errors';
+import { isNascimentoValido } from '@/src/shared/utils/mask';
 import type { OpcaoWhatsApp } from '@/types/database';
 import { Patient } from '@/src/features/patients/domain/entities/Patient';
 import type { PatientRepository } from '@/src/features/patients/domain/repositories/PatientRepository';
@@ -43,6 +44,15 @@ export class CreateAppointmentUseCase {
     const dataCadastro = new Date();
     const pacienteId = randomUUID();
 
+    // A string ISO precisa ser validada antes do parse: `new Date()` aplica
+    // rollover em dias impossíveis (2000-02-30 vira 01/03) e o Date resultante
+    // já não carrega o erro original para `Patient.criar` detectar.
+    if (!isNascimentoValido(input.dataNascimento)) {
+      throw new ValidationError('Informe uma data de nascimento válida (até hoje).');
+    }
+
+    // `Patient.criar` valida os dados do paciente antes de qualquer
+    // persistência: falha aqui não deixa resíduo no banco.
     const paciente = Patient.criar({
       id: pacienteId,
       nomeCompleto: input.nomeCompleto,
@@ -53,8 +63,6 @@ export class CreateAppointmentUseCase {
       endereco: input.endereco,
     });
 
-    await this.patientRepository.save(paciente);
-
     const dataCirurgia =
       input.tipo === 'TRATAMENTO_COM_CIRURGIA' ? validarAntecedencia15Dias(dataCadastro) : undefined;
 
@@ -63,10 +71,13 @@ export class CreateAppointmentUseCase {
       input.nomeSolicitante.trim().toLowerCase() !== input.nomeCompleto.trim().toLowerCase();
 
     let lastConflict: unknown = null;
+    let pacienteSalvo = false;
 
     for (let attempt = 0; attempt < CreateAppointmentUseCase.MAX_PROTOCOLO_ATTEMPTS; attempt += 1) {
       const protocolo = Protocolo.gerar(dataCadastro.getFullYear());
 
+      // `Appointment.criar` valida (e normaliza) o contato antes de qualquer
+      // persistência: falha aqui também não deixa paciente órfão.
       const agendamento = Appointment.criar({
         id: protocolo.valor,
         protocolo,
@@ -86,6 +97,10 @@ export class CreateAppointmentUseCase {
       });
 
       try {
+        if (!pacienteSalvo) {
+          await this.patientRepository.save(paciente);
+          pacienteSalvo = true;
+        }
         await this.appointmentRepository.save(agendamento);
       } catch (error) {
         if (error instanceof ConflictError) {

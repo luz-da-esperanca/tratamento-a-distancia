@@ -47,19 +47,12 @@ describe('isNascimentoValido', () => {
     expect(isNascimentoValido(iso)).toBe(false);
   });
 
-  it.each([[''], ['10/05/2000'], ['2000-13-01'], ['1899-12-31']])(
+  it.each([[''], ['10/05/2000'], ['2000-13-01'], ['1899-12-31'], ['2000-02-30'], ['2026-02-29']])(
     'rejeita %s',
     (entrada) => {
       expect(isNascimentoValido(entrada)).toBe(false);
     },
   );
-
-  // Lacuna conhecida: `new Date('2000-02-30')` faz rollover para 01/03 em vez
-  // de NaN, então dias impossíveis passam. `it.fails` trava a lacuna sem
-  // quebrar o CI; vira assertion normal quando a validação for corrigida.
-  it.fails('rejeita dia impossível 2000-02-30 (rollover do Date)', () => {
-    expect(isNascimentoValido('2000-02-30')).toBe(false);
-  });
 
   it('aceita limite inferior 1900-01-01', () => {
     expect(isNascimentoValido('1900-01-01')).toBe(true);

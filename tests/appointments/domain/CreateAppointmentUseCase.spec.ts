@@ -24,7 +24,7 @@ function baseInput(tipo: 'TRATAMENTO_COM_CIRURGIA' | 'TRATAMENTO_SEM_CIRURGIA') 
     cidade: 'São Paulo',
     endereco: 'Rua 1',
     emailNotificacao: 'a@b.com',
-    celular: '11999999999',
+    celular: '+5585999999999',
     tipoWhatsApp: 'E_WHATSAPP' as OpcaoWhatsApp,
     whatsappAuxiliar: undefined,
     nomeSolicitante: '',
