@@ -61,6 +61,7 @@ export function RegistrationSection() {
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState<FormInscricao>(initialFormData);
   const [protocoloGerado, setProtocoloGerado] = useState<string | null>(null);
+  const [emailEnviado, setEmailEnviado] = useState<boolean | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [nascimentoDisplay, setNascimentoDisplay] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
@@ -176,6 +177,7 @@ export function RegistrationSection() {
 
       if (resultado.sucesso) {
         setProtocoloGerado(resultado.protocolo!);
+        setEmailEnviado(resultado.emailEnviado ?? true);
       } else {
         setErro(resultado.erro || "Ocorreu um erro desconhecido.");
       }
@@ -209,9 +211,26 @@ export function RegistrationSection() {
             </p>
           </div>
 
+          {emailEnviado === false && (
+            <div
+              role="alert"
+              className="bg-warning/10 mb-6 p-4 border border-warning/30 rounded-xl text-sm text-left"
+            >
+              <p className="font-semibold text-foreground">
+                Não conseguimos enviar o e-mail de confirmação.
+              </p>
+              <p className="mt-1 text-foreground/80">
+                Guarde bem o seu protocolo acima — ele é a sua garantia de
+                acompanhamento. Se precisar, refaça a inscrição com outro
+                e-mail.
+              </p>
+            </div>
+          )}
+
           <button
             onClick={() => {
               setProtocoloGerado(null);
+              setEmailEnviado(null);
               setStep(0);
               setFormData(initialFormData);
               setNascimentoDisplay("");

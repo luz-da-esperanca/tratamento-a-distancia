@@ -14,6 +14,8 @@ vi.mock('@/src/features/appointments/presentation/actions/inscricao.actions', ()
   salvarAgendamento: vi.fn(),
 }));
 
+import { salvarAgendamento } from '@/src/features/appointments/presentation/actions/inscricao.actions';
+
 const PAIS_COM_ESTADOS = 'Brasil';
 const ESTADO_BR = getStates(codeByName[PAIS_COM_ESTADOS])![0].name;
 const OUTRO_PAIS_COM_ESTADOS = countries.find(
@@ -129,5 +131,82 @@ describe('RegistrationSection — País/Estado', () => {
       PAIS_SEM_ESTADOS,
     );
     expect(screen.getByPlaceholderText('Ex.: Piauí')).toHaveValue('Região X');
+  });
+
+  describe('aviso de e-mail não enviado', () => {
+    async function concluirInscricao(
+      user: ReturnType<typeof userEvent.setup>,
+      emailEnviado: boolean,
+    ) {
+      vi.mocked(salvarAgendamento).mockResolvedValue({
+        sucesso: true,
+        protocolo: 'AGD-2026-1234',
+        emailEnviado,
+      });
+      render(<RegistrationSection />);
+
+      await user.type(
+        screen.getByPlaceholderText('Ex.: Maria Oliveira'),
+        'Maria Oliveira',
+      );
+      await user.type(screen.getByPlaceholderText('dd/mm/aaaa'), '10052000');
+      await selecionarOpcao(
+        user,
+        'Selecione o país',
+        'Digite o nome do país...',
+        PAIS_COM_ESTADOS,
+        PAIS_COM_ESTADOS,
+      );
+      await selecionarOpcao(
+        user,
+        'Selecione o estado',
+        'Digite o nome do estado...',
+        ESTADO_BR,
+        ESTADO_BR,
+      );
+      await user.type(screen.getByPlaceholderText('Parnaíba'), 'Fortaleza');
+      await user.type(
+        screen.getByPlaceholderText('Rua, número, bairro e complemento'),
+        'Rua X, 123',
+      );
+      await user.click(
+        screen.getByRole('button', { name: /próxima etapa/i }),
+      );
+
+      await user.type(
+        await screen.findByPlaceholderText('contato@exemplo.com'),
+        'maria@exemplo.com',
+      );
+      // Celular é o primeiro PhoneField habilitado (o auxiliar nasce desabilitado).
+      const celular = screen
+        .getAllByPlaceholderText('(85) 98888-8888')
+        .find((el) => !(el as HTMLInputElement).disabled)!;
+      await user.type(celular, '+5585999999999');
+      await user.click(
+        screen.getByRole('button', { name: /próxima etapa/i }),
+      );
+
+      await user.click(
+        await screen.findByRole('button', { name: /finalizar inscrição/i }),
+      );
+      await screen.findByText('Inscrição Confirmada!');
+    }
+
+    it('mostra aviso para guardar o protocolo quando o e-mail falha', async () => {
+      const user = userEvent.setup();
+      await concluirInscricao(user, false);
+
+      expect(
+        screen.getByRole('alert'),
+      ).toHaveTextContent(/não conseguimos enviar o e-mail/i);
+      expect(screen.getByText('AGD-2026-1234')).toBeInTheDocument();
+    });
+
+    it('não mostra aviso quando o e-mail é enviado', async () => {
+      const user = userEvent.setup();
+      await concluirInscricao(user, true);
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
   });
 });
