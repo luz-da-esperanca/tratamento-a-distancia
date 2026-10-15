@@ -6,6 +6,11 @@ const execute = vi.fn();
 
 vi.mock('@/src/shared/infrastructure/composition/container', () => ({
   makeCreateAppointmentUseCase: vi.fn(async () => ({ execute })),
+  makeRateLimiter: vi.fn(() => ({ check: vi.fn(async () => ({ allowed: true })) })),
+}));
+
+vi.mock('next/headers', () => ({
+  headers: vi.fn(async () => new Headers()),
 }));
 
 import { salvarAgendamento } from '@/src/features/appointments/presentation/actions/inscricao.actions';

@@ -1,6 +1,10 @@
 "use server";
 
-import { makeCreateAppointmentUseCase } from '@/src/shared/infrastructure/composition/container';
+import { headers } from 'next/headers';
+import { makeCreateAppointmentUseCase, makeRateLimiter } from '@/src/shared/infrastructure/composition/container';
+import { enforceRateLimit } from '@/src/shared/infrastructure/ratelimit/enforceRateLimit';
+import { getClientIp } from '@/src/shared/infrastructure/ratelimit/clientIp';
+import { RATE_LIMITS } from '@/src/shared/infrastructure/ratelimit/rateLimitConfig';
 import { toAppError } from '@/src/shared/domain/errors';
 import type { OpcaoWhatsApp } from '@/types/database';
 
@@ -21,6 +25,14 @@ export interface FormInscricao {
 
 export async function salvarAgendamento(dados: FormInscricao) {
   try {
+    const allowed = await enforceRateLimit(makeRateLimiter(), {
+      ...RATE_LIMITS.inscricao,
+      identifier: getClientIp(await headers()),
+    });
+    if (!allowed) {
+      return { sucesso: false, erro: 'Muitas tentativas. Aguarde um minuto e tente novamente.' };
+    }
+
     const useCase = await makeCreateAppointmentUseCase();
 
     const result = await useCase.execute({

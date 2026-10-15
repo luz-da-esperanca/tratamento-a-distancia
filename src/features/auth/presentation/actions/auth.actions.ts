@@ -1,7 +1,11 @@
 "use server";
 
 import { redirect } from 'next/navigation';
-import { makeLoginAdminUseCase, makeLogoutAdminUseCase } from '@/src/shared/infrastructure/composition/container';
+import { headers } from 'next/headers';
+import { makeLoginAdminUseCase, makeLogoutAdminUseCase, makeRateLimiter } from '@/src/shared/infrastructure/composition/container';
+import { enforceRateLimit } from '@/src/shared/infrastructure/ratelimit/enforceRateLimit';
+import { getClientIp } from '@/src/shared/infrastructure/ratelimit/clientIp';
+import { RATE_LIMITS } from '@/src/shared/infrastructure/ratelimit/rateLimitConfig';
 import { toAppError } from '@/src/shared/domain/errors';
 
 export async function loginAction(prevState: { error?: string } | null, formData: FormData) {
@@ -9,6 +13,14 @@ export async function loginAction(prevState: { error?: string } | null, formData
   const senha = formData.get('senha') as string;
 
   try {
+    const allowed = await enforceRateLimit(makeRateLimiter(), {
+      ...RATE_LIMITS.loginAdmin,
+      identifier: getClientIp(await headers()),
+    });
+    if (!allowed) {
+      return { error: 'Muitas tentativas. Aguarde um minuto e tente novamente.' };
+    }
+
     const useCase = await makeLoginAdminUseCase();
     const result = await useCase.execute({ email: login, password: senha });
 

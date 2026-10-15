@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from 'next/headers';
+import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import type { Agendamento } from '@/types/database';
@@ -10,6 +11,10 @@ import { makeListAppointmentsUseCase } from '@/src/shared/infrastructure/composi
 import { makeUpdateAppointmentUseCase } from '@/src/shared/infrastructure/composition/container';
 import { makeDeleteAppointmentUseCase } from '@/src/shared/infrastructure/composition/container';
 import { makeValidatePatientAccessUseCase } from '@/src/shared/infrastructure/composition/container';
+import { makeRateLimiter } from '@/src/shared/infrastructure/composition/container';
+import { enforceRateLimit } from '@/src/shared/infrastructure/ratelimit/enforceRateLimit';
+import { getClientIp } from '@/src/shared/infrastructure/ratelimit/clientIp';
+import { RATE_LIMITS } from '@/src/shared/infrastructure/ratelimit/rateLimitConfig';
 import { makeGetAppointmentByProtocolUseCase } from '@/src/shared/infrastructure/composition/container';
 import { toAppError } from '@/src/shared/domain/errors';
 import { requireAdmin } from '@/src/shared/infrastructure/auth/requireAdmin';
@@ -131,6 +136,14 @@ export async function validarAcessoPaciente(prevState: { erro?: string } | null,
   }
 
   try {
+    const allowed = await enforceRateLimit(makeRateLimiter(), {
+      ...RATE_LIMITS.acessoPaciente,
+      identifier: getClientIp(await headers()),
+    });
+    if (!allowed) {
+      return { erro: 'Muitas tentativas. Aguarde um minuto e tente novamente.' };
+    }
+
     const useCase = await makeValidatePatientAccessUseCase();
     await useCase.execute({ protocolo, dataNascimento });
   } catch {

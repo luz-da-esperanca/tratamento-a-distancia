@@ -9,10 +9,12 @@ const cookieSet = vi.fn();
 
 vi.mock('@/src/shared/infrastructure/composition/container', () => ({
   makeValidatePatientAccessUseCase: vi.fn(async () => ({ execute: validateExecute })),
+  makeRateLimiter: vi.fn(() => ({ check: vi.fn(async () => ({ allowed: true })) })),
 }));
 
 vi.mock('next/headers', () => ({
   cookies: vi.fn(async () => ({ set: cookieSet })),
+  headers: vi.fn(async () => new Headers()),
 }));
 
 vi.mock('next/navigation', () => ({

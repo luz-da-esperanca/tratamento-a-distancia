@@ -8,6 +8,11 @@ const logoutExecute = vi.fn();
 vi.mock('@/src/shared/infrastructure/composition/container', () => ({
   makeLoginAdminUseCase: vi.fn(async () => ({ execute: loginExecute })),
   makeLogoutAdminUseCase: vi.fn(async () => ({ execute: logoutExecute })),
+  makeRateLimiter: vi.fn(() => ({ check: vi.fn(async () => ({ allowed: true })) })),
+}));
+
+vi.mock('next/headers', () => ({
+  headers: vi.fn(async () => new Headers()),
 }));
 
 vi.mock('next/navigation', () => ({
