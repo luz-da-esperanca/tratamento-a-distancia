@@ -17,9 +17,19 @@ export function toISODate(masked: string): string {
 }
 
 export function isNascimentoValido(iso: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
-  const date = new Date(`${iso}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return false;
+  const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return false;
+  const [, ano, mes, dia] = match;
+  // Constrói por componentes e confere: sem isso, dias impossíveis sofrem
+  // rollover (ex.: 2000-02-30 vira 01/03) e passam como válidos.
+  const date = new Date(Number(ano), Number(mes) - 1, Number(dia));
+  if (
+    date.getFullYear() !== Number(ano) ||
+    date.getMonth() !== Number(mes) - 1 ||
+    date.getDate() !== Number(dia)
+  ) {
+    return false;
+  }
   const limite = new Date();
   limite.setHours(23, 59, 59, 999);
   if (date > limite) return false;

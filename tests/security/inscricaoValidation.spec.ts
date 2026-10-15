@@ -7,13 +7,11 @@ import { ok } from '@/src/shared/domain/Result';
 import type { CreateAppointmentInput } from '@/src/features/appointments/application/use-cases/CreateAppointmentUseCase';
 
 /**
- * FASE 1 — Lacuna P0: ausência de validação server-side no cadastro.
+ * Barreira P0: validação server-side do cadastro.
  *
- * `Patient.criar` e `Appointment.criar` não validam nada (só `status`),
- * então `salvarAgendamento` persiste qualquer payload que bypassar a UI.
- * Estes testes usam `it.fails`: passam enquanto a falha existir e
- * QUEBRAM quando a validação for implementada — sinal para remover o
- * marcador e converter em assertions normais.
+ * `Patient.criar` / `Appointment.criar` rejeitam payload inválido que
+ * bypassar a UI, e o use-case valida tudo ANTES de persistir (nenhum
+ * paciente órfão). Estes testes falham se qualquer proteção for removida.
  */
 function buildFakes() {
   const patientRepo: PatientRepository = {
@@ -54,34 +52,60 @@ function baseInput(): CreateAppointmentInput {
   };
 }
 
-describe('P0 — validação server-side do cadastro (lacuna conhecida)', () => {
-  it.fails('rejeita nome completo vazio', async () => {
+describe('P0 — validação server-side do cadastro', () => {
+  it('rejeita nome completo vazio sem persistir nada', async () => {
     const { patientRepo, appointmentRepo, emailGateway } = buildFakes();
     const useCase = new CreateAppointmentUseCase(patientRepo, appointmentRepo, emailGateway);
 
     await expect(useCase.execute({ ...baseInput(), nomeCompleto: '   ' })).rejects.toThrow();
+    expect(patientRepo.save).not.toHaveBeenCalled();
+    expect(appointmentRepo.save).not.toHaveBeenCalled();
   });
 
-  it.fails('rejeita e-mail de notificação malformado', async () => {
+  it('rejeita e-mail de notificação malformado sem persistir nada', async () => {
     const { patientRepo, appointmentRepo, emailGateway } = buildFakes();
     const useCase = new CreateAppointmentUseCase(patientRepo, appointmentRepo, emailGateway);
 
     await expect(useCase.execute({ ...baseInput(), emailNotificacao: 'nao-e-email' })).rejects.toThrow();
+    expect(patientRepo.save).not.toHaveBeenCalled();
+    expect(appointmentRepo.save).not.toHaveBeenCalled();
   });
 
-  it.fails('rejeita celular vazio', async () => {
+  it('rejeita celular vazio sem persistir nada', async () => {
     const { patientRepo, appointmentRepo, emailGateway } = buildFakes();
     const useCase = new CreateAppointmentUseCase(patientRepo, appointmentRepo, emailGateway);
 
     await expect(useCase.execute({ ...baseInput(), celular: '' })).rejects.toThrow();
+    expect(patientRepo.save).not.toHaveBeenCalled();
+    expect(appointmentRepo.save).not.toHaveBeenCalled();
   });
 
-  it.fails('rejeita OUTRO_NUMERO sem whatsapp auxiliar', async () => {
+  it('rejeita OUTRO_NUMERO sem whatsapp auxiliar sem persistir nada', async () => {
     const { patientRepo, appointmentRepo, emailGateway } = buildFakes();
     const useCase = new CreateAppointmentUseCase(patientRepo, appointmentRepo, emailGateway);
 
     await expect(
       useCase.execute({ ...baseInput(), tipoWhatsApp: 'OUTRO_NUMERO', whatsappAuxiliar: '' }),
     ).rejects.toThrow();
+    expect(patientRepo.save).not.toHaveBeenCalled();
+    expect(appointmentRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('rejeita data de nascimento impossível (2000-02-30) sem persistir nada', async () => {
+    const { patientRepo, appointmentRepo, emailGateway } = buildFakes();
+    const useCase = new CreateAppointmentUseCase(patientRepo, appointmentRepo, emailGateway);
+
+    await expect(useCase.execute({ ...baseInput(), dataNascimento: '2000-02-30' })).rejects.toThrow();
+    expect(patientRepo.save).not.toHaveBeenCalled();
+    expect(appointmentRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('rejeita data de nascimento futura sem persistir nada', async () => {
+    const { patientRepo, appointmentRepo, emailGateway } = buildFakes();
+    const useCase = new CreateAppointmentUseCase(patientRepo, appointmentRepo, emailGateway);
+
+    await expect(useCase.execute({ ...baseInput(), dataNascimento: '2999-01-01' })).rejects.toThrow();
+    expect(patientRepo.save).not.toHaveBeenCalled();
+    expect(appointmentRepo.save).not.toHaveBeenCalled();
   });
 });

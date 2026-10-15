@@ -17,6 +17,7 @@ import {
   PACIENTE_SESSION_COOKIE,
   PACIENTE_SESSION_MAX_AGE_SECONDS,
   createPacienteSession,
+  verifyPacienteSession,
 } from '@/src/shared/infrastructure/security/pacienteSession';
 
 interface AppointmentItem {
@@ -151,6 +152,14 @@ export async function validarAcessoPaciente(prevState: { erro?: string } | null,
 
 export async function buscarAgendamentoPorProtocolo(protocolo: string): Promise<Agendamento | null> {
   try {
+    // Trust boundary: Server Actions são invocáveis por POST direto e o
+    // protocolo é enumerável, então a sessão precisa ser verificada aqui —
+    // o HMAC da página protege só a navegação, não esta leitura de dados.
+    const cookieStore = await cookies();
+    const session = cookieStore.get(PACIENTE_SESSION_COOKIE)?.value;
+    if (!verifyPacienteSession(session, protocolo)) {
+      return null;
+    }
     const useCase = await makeGetAppointmentByProtocolUseCase();
     const { appointment, paciente } = await useCase.execute({ protocolo });
     return toLegacyAgendamento({ appointment, paciente });

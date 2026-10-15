@@ -4,8 +4,15 @@ vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://exemplo.supabase.co');
 vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'anon-key-teste');
 vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'service-role-key-teste');
 vi.stubEnv('ADMIN_ALLOWED_EMAILS', 'admin@exemplo.com');
+vi.stubEnv('PACIENTE_SESSION_SECRET', 'segredo-de-teste-com-32-chars-123456');
 
 const getUser = vi.fn();
+
+const cookiesGet = vi.fn();
+
+vi.mock('next/headers', () => ({
+  cookies: vi.fn(async () => ({ get: cookiesGet })),
+}));
 
 vi.mock('@/src/shared/infrastructure/database/supabase/server', () => ({
   createServerSupabaseClient: vi.fn(async () => ({ auth: { getUser } })),
@@ -33,6 +40,7 @@ import {
   excluirAgendamento,
   buscarAgendamentoPorProtocolo,
 } from '@/src/features/appointments/presentation/actions/agendamentos.actions';
+import { createPacienteSession } from '@/src/shared/infrastructure/security/pacienteSession';
 import { enviarAlertaGeral } from '@/src/features/appointments/presentation/actions/alertas.actions';
 import { salvarTemplatesRotina } from '@/src/features/emails/presentation/actions/templates.actions';
 
@@ -88,17 +96,15 @@ describe('admin actions — fail-closed sem sessão', () => {
   });
 });
 
-describe('trust boundary — buscarAgendamentoPorProtocolo é pública', () => {
+describe('trust boundary — buscarAgendamentoPorProtocolo exige sessão válida', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     semSessao();
+    cookiesGet.mockReturnValue(undefined);
   });
 
-  it('chamada direta sem sessão retorna dados (proteção depende do chamador/página HMAC)', async () => {
-    // NENHUM gate de sessão existe aqui: com dados no use-case, a action os
-    // retorna sem exigir cookie/sessão. A página /tratamento/[protocolo]
-    // compensa verificando o HMAC antes de chamar.
-    getByProtocolExecute.mockResolvedValueOnce({
+  function dadosNoUseCase() {
+    getByProtocolExecute.mockResolvedValue({
       appointment: {
         protocolo: { valor: 'AGD-2026-1111' },
         pacienteId: 'pac-1',
@@ -116,6 +122,34 @@ describe('trust boundary — buscarAgendamentoPorProtocolo é pública', () => {
         dataCirurgia: undefined,
       },
       paciente: null,
+    });
+  }
+
+  it('chamada direta sem cookie retorna null sem alcançar o use-case', async () => {
+    dadosNoUseCase();
+
+    const result = await buscarAgendamentoPorProtocolo('AGD-2026-1111');
+
+    expect(result).toBeNull();
+    expect(getByProtocolExecute).not.toHaveBeenCalled();
+  });
+
+  it('sessão de outro protocolo retorna null sem alcançar o use-case', async () => {
+    dadosNoUseCase();
+    cookiesGet.mockReturnValue({
+      value: createPacienteSession('AGD-2026-2222'),
+    });
+
+    const result = await buscarAgendamentoPorProtocolo('AGD-2026-1111');
+
+    expect(result).toBeNull();
+    expect(getByProtocolExecute).not.toHaveBeenCalled();
+  });
+
+  it('sessão válida do próprio protocolo retorna os dados', async () => {
+    dadosNoUseCase();
+    cookiesGet.mockReturnValue({
+      value: createPacienteSession('AGD-2026-1111'),
     });
 
     const result = await buscarAgendamentoPorProtocolo('AGD-2026-1111');
