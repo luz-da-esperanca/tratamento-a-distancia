@@ -18,6 +18,8 @@ import { SendRoutineWednesdayUseCase } from '@/src/features/emails/application/u
 import { SendSurgeryAlertsUseCase } from '@/src/features/emails/application/use-cases/SendSurgeryAlertsUseCase';
 import { LoginAdminUseCase } from '@/src/features/auth/application/use-cases/LoginAdminUseCase';
 import { LogoutAdminUseCase } from '@/src/features/auth/application/use-cases/LogoutAdminUseCase';
+import { SupabaseRateLimiter } from '@/src/shared/infrastructure/ratelimit/SupabaseRateLimiter';
+import type { RateLimiter } from '@/src/shared/infrastructure/ratelimit/RateLimiter';
 
 // Cadastro público: client do servidor (anon, respeita RLS - apenas INSERT público)
 export async function makeCreateAppointmentUseCase() {
@@ -116,4 +118,9 @@ export function makeSendRoutineWednesdayUseCase() {
 export function makeSendSurgeryAlertsUseCase() {
   const client = createAdminSupabaseClient();
   return new SendSurgeryAlertsUseCase(new SupabaseAppointmentRepository(client), new ResendEmailGateway());
+}
+
+// Throttle server-side das superfícies públicas (service_role; RLS nega o resto)
+export function makeRateLimiter(): RateLimiter {
+  return new SupabaseRateLimiter(createAdminSupabaseClient());
 }

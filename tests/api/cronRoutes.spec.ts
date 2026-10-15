@@ -11,6 +11,7 @@ vi.mock('@/src/shared/infrastructure/composition/container', () => ({
   makeSendRoutineTuesdayUseCase: vi.fn(() => ({ execute: tuesdayExecute })),
   makeSendRoutineWednesdayUseCase: vi.fn(() => ({ execute: wednesdayExecute })),
   makeSendSurgeryAlertsUseCase: vi.fn(() => ({ execute: alertsExecute })),
+  makeRateLimiter: vi.fn(() => ({ check: vi.fn(async () => ({ allowed: true })) })),
 }));
 
 import { GET as terca } from '@/app/api/cron/terca/route';

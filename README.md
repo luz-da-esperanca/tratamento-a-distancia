@@ -51,7 +51,7 @@ virtuais — Evangelhoterapia, passes, desobsessão e atendimento fraterno — s
 | FAQ e instruções | 9 dúvidas frequentes + procedimentos do tratamento e da cirurgia |
 | Painel admin | Listagem, edição, exclusão, reagendamento e filtros (com/sem cirurgia) |
 | E-mails programados | Templates de terça/quarta + alertas de cirurgia (15/7/3/0 dias) |
-| Crons automáticos | Disparos de terça, quarta e alertas diários via Vercel Cron com `CRON_SECRET` |
+| Crons automáticos | Disparos de terça, quarta e alertas diários (08:00 BRT) via Vercel Cron (`vercel.json`) ou Netlify Scheduled Functions (`netlify/functions`), autenticados por `CRON_SECRET` |
 
 ---
 
@@ -67,7 +67,7 @@ virtuais — Evangelhoterapia, passes, desobsessão e atendimento fraterno — s
 | Telefone i18n | `libphonenumber-js` + `react-phone-number-input` + `world-countries` |
 | Datas | `date-fns` |
 | Testes | Vitest |
-| Deploy | Vercel (crons) / Netlify + GitHub Actions (lint, test, build) |
+| Deploy | Netlify (Scheduled Functions p/ crons) / Vercel (`vercel.json` p/ crons) + GitHub Actions (lint, test, build) |
 
 ---
 
@@ -202,7 +202,11 @@ CI (`.github/workflows/ci.yml`): Node 22 → `npm ci` → `lint` → `test` → 
   `CRON_SECRET`. `next.config.ts` inclui `serverExternalPackages: ["@opentelemetry/api"]`.
 - **Netlify (alternativo):** `netlify.toml` (`command = "npm run build"`, `publish = ".next"`) com
   `SECRETS_SCAN_OMIT_KEYS = "ADMIN_ALLOWED_EMAILS,PACIENTE_SESSION_SECRET"` (valores server-only
-  embutidos nos chunks SSR).
+  embutidos nos chunks SSR) + Scheduled Functions em `netlify/functions/` (mesmos horários:
+  ter `0 11 * * 2`, qua `0 11 * * 3`, alertas diário `0 11 * * *`) que chamam as rotas com
+  `Bearer CRON_SECRET` (envs `URL` automática + `CRON_SECRET` existente; logs em
+  Netlify → Functions). Alertas de cirurgia rodam exatamente 1x/dia (sem flag de
+  enviado — rodada dupla duplicaria e-mails).
 
 ---
 

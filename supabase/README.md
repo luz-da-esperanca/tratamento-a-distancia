@@ -6,6 +6,7 @@ Fonte de verdade do schema: esta pasta, em ordem numérica.
 | --- | --- | --- |
 | 1º | `migrations/20260922_00_init_schema.sql` | Snapshot inicial idempotente (ENUMs, `pacientes`, `agendamentos`, `template_emails`, RLS + policies originais) |
 | 2º | `migrations/20260922_01_harden_rls_policies.sql` | Endurece o RLS: remove `SELECT` público (`anon`) e CRUD administrativo via RLS, mantendo só o `INSERT` do cadastro |
+| 3º | `migrations/20260922_02_rate_limit.sql` | Tabela `rate_limit_hits` do throttle server-side (RLS nega tudo; só `service_role`) |
 
 O `database.sql` na raiz é snapshot de leitura/documentação — não aplique os dois
 (`migrations/` **ou** `database.sql` + harden, nunca ambos duplicados sem necessidade;
@@ -19,6 +20,8 @@ todos os arquivos são idempotentes, então reexecutar não quebra).
    `migrations/20260922_00_init_schema.sql` → **Run**.
 3. **SQL Editor → New query** → cole o conteúdo de
    `migrations/20260922_01_harden_rls_policies.sql` → **Run**.
+4. **SQL Editor → New query** → cole o conteúdo de
+   `migrations/20260922_02_rate_limit.sql` → **Run**.
 4. Confira em **Table Editor** as tabelas `pacientes`, `agendamentos` e `template_emails`.
 5. Crie o usuário admin em **Authentication → Users → Add user** (o e-mail precisa
    estar no `ADMIN_ALLOWED_EMAILS` do deploy).
