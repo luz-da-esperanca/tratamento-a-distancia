@@ -105,6 +105,7 @@ export default function TratamentoCirurgia({ dadosIniciais }: TratamentoCirurgia
       {/* Modal de Detalhes - Mantido exatamente como estava */}
       {selectedAgendamento && (
         <UserDetailModal 
+          key={selectedAgendamento.protocolo}
           agendamento={selectedAgendamento} 
           onClose={() => setSelectedAgendamento(null)}
           onUpdate={handleUpdate}

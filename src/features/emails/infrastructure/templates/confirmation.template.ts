@@ -1,4 +1,4 @@
-import { formatDate } from 'date-fns';
+import { formatDateOnly } from '@/src/shared/utils/date';
 
 export interface ConfirmationEmailData {
   protocolo: string;
@@ -12,14 +12,14 @@ export function buildConfirmationEmail(
   data: ConfirmationEmailData,
 ): { assunto: string; corpoHtml: string; replyTo: string } {
   const tipoLabel = data.tipo === 'TRATAMENTO_COM_CIRURGIA' ? 'Com Cirurgia' : 'Sem Cirurgia';
-  const dataNascimentoFormatada = formatDate(new Date(`${data.dataNascimento}T12:00:00`), 'dd/MM/yyyy');
+  const dataNascimentoFormatada = formatDateOnly(data.dataNascimento);
 
   const corpoHtml = `<p>Olá,</p>
 <p>Seu agendamento foi confirmado com sucesso.</p>
 <p>Protocolo: <strong>${data.protocolo}</strong></p>
-<p>Data do Cadastro: ${formatDate(data.dataCadastro, 'dd/MM/yyyy')}</p>
+<p>Data do Cadastro: ${formatDateOnly(data.dataCadastro)}</p>
 <p>Tipo de Tratamento: ${tipoLabel}</p>
-${data.dataCirurgia ? `<p>Data Prevista para Cirurgia: <strong>${formatDate(data.dataCirurgia, 'dd/MM/yyyy')}</strong></p>` : ''}
+${data.dataCirurgia ? `<p>Data Prevista para Cirurgia: <strong>${formatDateOnly(data.dataCirurgia)}</strong></p>` : ''}
 <br />
 <p>Para acompanhar seu agendamento, acesse nosso portal e utilize o protocolo fornecido e sua data de nascimento.</p>
 <p>Protocolo de acompanhamento: <strong>${data.protocolo}</strong></p>

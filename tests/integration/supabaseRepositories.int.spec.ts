@@ -7,6 +7,7 @@ import { SupabaseEmailTemplateRepository } from '@/src/features/emails/infrastru
 import { ConflictError, RepositoryError } from '@/src/shared/domain/errors';
 import { EmailTemplate } from '@/src/features/emails/domain/entities/EmailTemplate';
 import { makeAppointment, makePatient, makeProtocolo } from '@/tests/helpers/factories';
+import { parseDateOnly, toDateOnlyISO } from '@/src/shared/utils/date';
 
 /**
  * Testes de integração contra um projeto Supabase de TESTE (staging).
@@ -61,7 +62,7 @@ describe.skipIf(!enabled)('Supabase repositories (integração)', () => {
   it('paciente: save → findById (mapeamento snake_case + data) → delete', async () => {
     const id = randomUUID();
     createdPatientIds.push(id);
-    const patient = makePatient({ id, dataNascimento: new Date('2000-05-10T12:00:00') });
+    const patient = makePatient({ id, dataNascimento: parseDateOnly('2000-05-10') });
 
     await pacientes.save(patient);
     const found = await pacientes.findById(id);
@@ -69,7 +70,7 @@ describe.skipIf(!enabled)('Supabase repositories (integração)', () => {
     expect(found?.nomeCompleto).toBe('Maria Silva');
     expect(found?.cidade).toBe('Fortaleza');
     // data_nascimento DATE volta sem timezone; compara só a data
-    expect(found?.dataNascimento.toISOString().split('T')[0]).toBe('2000-05-10');
+    expect(found ? toDateOnlyISO(found.dataNascimento) : null).toBe('2000-05-10');
 
     await pacientes.delete(id);
     expect(await pacientes.findById(id)).toBeNull();
@@ -86,14 +87,14 @@ describe.skipIf(!enabled)('Supabase repositories (integração)', () => {
       id: protocolo,
       protocolo: makeProtocolo(protocolo),
       pacienteId: patientId,
-      dataCirurgia: new Date('2099-09-25T12:00:00'),
+      dataCirurgia: parseDateOnly('2099-09-25'),
     });
     await agendamentos.save(appointment);
 
     const found = await agendamentos.findByProtocol(makeProtocolo(protocolo));
     expect(found?.emailNotificacao).toBe('a@b.com');
     expect(found?.enviouEmailTerca).toBe(false);
-    expect(found?.dataCirurgia?.toISOString().split('T')[0]).toBe('2099-09-25');
+    expect(found?.dataCirurgia ? toDateOnlyISO(found.dataCirurgia) : null).toBe('2099-09-25');
 
     // pendente de terça antes da flag...
     const pendentesAntes = await agendamentos.findPendingRoutine('terca');

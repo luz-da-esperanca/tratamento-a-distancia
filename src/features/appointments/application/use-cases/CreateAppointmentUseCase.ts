@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { ConflictError, ValidationError } from '@/src/shared/domain/errors';
 import { isNascimentoValido } from '@/src/shared/utils/mask';
+import { parseDateOnly } from '@/src/shared/utils/date';
 import type { OpcaoWhatsApp } from '@/types/database';
 import { Patient } from '@/src/features/patients/domain/entities/Patient';
 import type { PatientRepository } from '@/src/features/patients/domain/repositories/PatientRepository';
@@ -56,7 +57,7 @@ export class CreateAppointmentUseCase {
     const paciente = Patient.criar({
       id: pacienteId,
       nomeCompleto: input.nomeCompleto,
-      dataNascimento: new Date(`${input.dataNascimento}T12:00:00`),
+      dataNascimento: parseDateOnly(input.dataNascimento),
       pais: input.pais,
       estado: input.estado,
       cidade: input.cidade,

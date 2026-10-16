@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { rethrowAsRepositoryError } from '@/src/shared/infrastructure/database/supabase/supabaseError';
+import { parseDateOnly, toDateOnlyISO } from '@/src/shared/utils/date';
 import type { StatusAgendamento } from '../../domain/value-objects/StatusAgendamento';
 import type { TipoTratamento } from '../../domain/entities/Appointment';
 import { Appointment } from '../../domain/entities/Appointment';
@@ -42,7 +43,7 @@ export class SupabaseAppointmentRepository implements AppointmentRepository {
       enviouEmailTerca: row.enviou_email_terca,
       enviouEmailQuarta: row.enviou_email_quarta,
       tipo: row.tipo as TipoTratamento,
-      dataCirurgia: row.data_cirurgia ? new Date(row.data_cirurgia) : undefined,
+      dataCirurgia: row.data_cirurgia ? parseDateOnly(row.data_cirurgia) : undefined,
     });
   }
 
@@ -62,7 +63,7 @@ export class SupabaseAppointmentRepository implements AppointmentRepository {
       enviou_email_terca: appointment.enviouEmailTerca,
       enviou_email_quarta: appointment.enviouEmailQuarta,
       data_cirurgia: appointment.dataCirurgia
-        ? appointment.dataCirurgia.toISOString().split('T')[0]
+        ? toDateOnlyISO(appointment.dataCirurgia)
         : null,
     });
 
@@ -99,7 +100,7 @@ export class SupabaseAppointmentRepository implements AppointmentRepository {
         enviou_email_terca: appointment.enviouEmailTerca,
         enviou_email_quarta: appointment.enviouEmailQuarta,
         data_cirurgia: appointment.dataCirurgia
-          ? appointment.dataCirurgia.toISOString().split('T')[0]
+          ? toDateOnlyISO(appointment.dataCirurgia)
           : null,
       })
       .eq('protocolo', appointment.protocolo.valor);

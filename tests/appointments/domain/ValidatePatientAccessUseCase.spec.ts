@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ValidatePatientAccessUseCase } from '@/src/features/appointments/application/use-cases/ValidatePatientAccessUseCase';
 import { InvalidAccessError } from '@/src/features/appointments/domain/errors/AppointmentErrors';
+import { parseDateOnly } from '@/src/shared/utils/date';
 import {
   makeAppointment,
   makePatient,
@@ -14,7 +15,7 @@ function appointmentComProtocolo(protocolo: string) {
 }
 
 function patientNascidoEm(dataNascimento: string) {
-  return makePatient({ dataNascimento: new Date(`${dataNascimento}T12:00:00`) });
+  return makePatient({ dataNascimento: parseDateOnly(dataNascimento) });
 }
 
 describe('ValidatePatientAccessUseCase', () => {

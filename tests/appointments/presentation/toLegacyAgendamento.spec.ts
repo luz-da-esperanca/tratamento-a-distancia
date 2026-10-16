@@ -19,6 +19,7 @@ vi.mock('@/src/shared/infrastructure/composition/container', () => ({
 
 import { buscarAgendamentos } from '@/src/features/appointments/presentation/actions/agendamentos.actions';
 import { makeAppointment, makePatient } from '@/tests/helpers/factories';
+import { parseDateOnly } from '@/src/shared/utils/date';
 
 function makeAppointmentByTipo(
   tipo: 'TRATAMENTO_COM_CIRURGIA' | 'TRATAMENTO_SEM_CIRURGIA',
@@ -28,7 +29,7 @@ function makeAppointmentByTipo(
     tipo,
     pacienteId,
     enviouEmailTerca: true,
-    dataCirurgia: tipo === 'TRATAMENTO_COM_CIRURGIA' ? new Date('2026-09-25T12:00:00') : undefined,
+    dataCirurgia: tipo === 'TRATAMENTO_COM_CIRURGIA' ? parseDateOnly('2026-09-25') : undefined,
   });
 }
 

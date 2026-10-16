@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildConfirmationEmail } from '@/src/features/emails/infrastructure/templates/confirmation.template';
+import { parseDateOnly } from '@/src/shared/utils/date';
 
 describe('buildConfirmationEmail', () => {
   it('sem cirurgia: assunto com protocolo, tipo Sem Cirurgia e sem linha de cirurgia', () => {
@@ -24,7 +25,7 @@ describe('buildConfirmationEmail', () => {
       protocolo: 'AGD-2026-5678',
       tipo: 'TRATAMENTO_COM_CIRURGIA',
       dataCadastro: new Date('2026-09-01T12:00:00'),
-      dataCirurgia: new Date('2026-09-25T12:00:00'),
+      dataCirurgia: parseDateOnly('2026-09-25'),
       dataNascimento: '1990-01-20',
     });
 
