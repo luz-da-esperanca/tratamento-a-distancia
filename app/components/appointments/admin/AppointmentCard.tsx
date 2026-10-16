@@ -1,5 +1,5 @@
 import { User, Clock, Calendar, ArrowRight } from "lucide-react";
-import { format } from "date-fns";
+import { formatDateSafe } from "@/src/shared/utils/date";
 import { Agendamento } from "@/types/database";
 
 interface AppointmentCardProps {
@@ -8,6 +8,10 @@ interface AppointmentCardProps {
 }
 
 export function AppointmentCard({ data, onClick }: AppointmentCardProps) {
+  const cadastroLabel = formatDateSafe(data.data_cadastro);
+  const cirurgiaLabel = formatDateSafe(
+    (data as { data_cirurgia?: Date | string | null }).data_cirurgia ?? null,
+  );
   return (
     <div
       onClick={onClick}
@@ -37,14 +41,12 @@ export function AppointmentCard({ data, onClick }: AppointmentCardProps) {
         <div className="space-y-2.5 mb-6">
           <div className="flex items-center gap-2 font-medium text-foreground/70 text-xs">
             <Clock size={14} className="text-neutral" />
-            Cadastro: {data.data_cadastro && !isNaN(new Date(data.data_cadastro).getTime())
-              ? new Date(data.data_cadastro).toLocaleDateString()
-              : "Data inválida"}
+            Cadastro: {cadastroLabel === "—" ? "Data inválida" : cadastroLabel}
           </div>
-          {data.tipo === "TRATAMENTO_COM_CIRURGIA" && data.data_cirurgia && !isNaN(new Date(data.data_cirurgia).getTime()) && (
+          {data.tipo === "TRATAMENTO_COM_CIRURGIA" && cirurgiaLabel !== "—" && (
             <div className="flex items-center gap-2 font-bold text-brand text-xs">
               <Calendar size={14} />
-              Cirurgia: {new Date(`${data.data_cirurgia}T12:00:00`).toLocaleDateString()}
+              Cirurgia: {cirurgiaLabel}
             </div>
           )}
         </div>

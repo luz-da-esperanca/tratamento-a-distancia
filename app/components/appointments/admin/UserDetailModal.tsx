@@ -3,9 +3,9 @@ import {
   X, Calendar, User, Trash2, Save, MoveRight,
   Mail, Phone, MessageCircle, HeartHandshake, CheckCircle2, XCircle
 } from "lucide-react";
-import { format, addMonths } from "date-fns";
+import { addMonths, format as formatDateFns } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { formatDateSafe } from "@/src/shared/utils/date";
+import { formatDateSafe, parseDateOnly, toDateOnlyISO } from "@/src/shared/utils/date";
 import { Agendamento, OpcaoWhatsApp, StatusAgendamento } from "@/types/database";
 import { SubmitButton } from "@/components/shared/SubmitButton";
 // Importações das Server Actions reais:
@@ -21,15 +21,21 @@ interface UserDetailModalProps {
 
 export function UserDetailModal({ agendamento, onClose, onUpdate, onDelete }: UserDetailModalProps) {
   const isSurgery = agendamento.tipo === "TRATAMENTO_COM_CIRURGIA";
+  // Remontado por key={protocolo} em TratamentoCirurgia: o estado inicial
+  // já reflete o registro aberto, sem sincronização via efeito.
   const [tipoWhats, setTipoWhats] = useState<OpcaoWhatsApp>(agendamento.tipo_whatsapp);
 
   const handleReschedule = async () => {
     if (isSurgery && agendamento.data_cirurgia) {
-      const nextMonth = addMonths(new Date(agendamento.data_cirurgia), 1);
+      const base =
+        agendamento.data_cirurgia instanceof Date
+          ? agendamento.data_cirurgia
+          : parseDateOnly(String(agendamento.data_cirurgia));
+      const nextMonth = addMonths(base, 1);
       const newDate = calcularUltimaSextaDoMes(nextMonth);
 
       // Salva direto no banco
-      const resultado = await atualizarAgendamento(agendamento.protocolo, { data_cirurgia: newDate.toISOString().split('T')[0] } as unknown as Partial<Agendamento>);
+      const resultado = await atualizarAgendamento(agendamento.protocolo, { data_cirurgia: toDateOnlyISO(newDate) } as unknown as Partial<Agendamento>);
 
       if (!resultado.sucesso) {
         alert(resultado.erro ?? 'Não foi possível adiar o agendamento.');
@@ -227,12 +233,17 @@ export function UserDetailModal({ agendamento, onClose, onUpdate, onDelete }: Us
                   </div>
                 </div>
 
-                {isSurgery && agendamento.data_cirurgia && !isNaN(new Date(agendamento.data_cirurgia).getTime()) ? (
+                {isSurgery && formatDateSafe(agendamento.data_cirurgia) !== "—" ? (
                   <div>
                     <p className="mb-2 font-bold text-neutral text-xs uppercase tracking-wide">Data da Cirurgia</p>
                     <div className="flex flex-wrap items-center gap-3">
                       <span className="font-bold text-foreground text-sm">
-                        {format(new Date(agendamento.data_cirurgia), "dd 'de' MMM, yyyy", { locale: ptBR })}
+                        {(() => {
+                          const raw = agendamento.data_cirurgia;
+                          const base =
+                            raw instanceof Date ? raw : parseDateOnly(String(raw));
+                          return formatDateFns(base, "dd 'de' MMM, yyyy", { locale: ptBR });
+                        })()}
                       </span>
                       <button
                         type="button"

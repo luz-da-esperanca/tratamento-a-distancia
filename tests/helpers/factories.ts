@@ -2,6 +2,7 @@ import { vi } from 'vitest';
 import { Appointment, type AppointmentProps } from '@/src/features/appointments/domain/entities/Appointment';
 import { Patient, type PatientProps } from '@/src/features/patients/domain/entities/Patient';
 import { Protocolo } from '@/src/features/appointments/domain/value-objects/Protocolo';
+import { parseDateOnly } from '@/src/shared/utils/date';
 import { EmailTemplate } from '@/src/features/emails/domain/entities/EmailTemplate';
 import type { AppointmentRepository } from '@/src/features/appointments/domain/repositories/AppointmentRepository';
 import type { PatientRepository } from '@/src/features/patients/domain/repositories/PatientRepository';
@@ -44,7 +45,7 @@ export function makePatient(overrides: Partial<PatientProps> = {}): Patient {
   return Patient.reconstituir({
     id: 'pac-1',
     nomeCompleto: 'Maria Silva',
-    dataNascimento: new Date('2000-05-10T12:00:00'),
+    dataNascimento: parseDateOnly('2000-05-10'),
     pais: 'BR',
     estado: 'CE',
     cidade: 'Fortaleza',
