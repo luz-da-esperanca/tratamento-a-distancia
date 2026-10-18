@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SearchableSelect, type SelectOption } from '@/app/components/shared/SearchableSelect';
 
@@ -100,5 +100,92 @@ describe('SearchableSelect', () => {
     renderSelect({ value: 'Brasil' });
 
     expect(screen.getByPlaceholderText('Selecione o país')).toHaveValue('Brasil');
+  });
+});
+
+describe('SearchableSelect — teclado mobile', () => {
+  it('resize na abertura (teclado) reposiciona sem fechar', async () => {
+    const user = userEvent.setup();
+    renderSelect();
+
+    await user.click(screen.getByPlaceholderText('Selecione o país'));
+    await screen.findByRole('listbox');
+
+    act(() => {
+      window.dispatchEvent(new Event('resize'));
+    });
+
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+  });
+
+  it('scroll na abertura (teclado) não fecha', async () => {
+    const user = userEvent.setup();
+    renderSelect();
+
+    await user.click(screen.getByPlaceholderText('Selecione o país'));
+    await screen.findByRole('listbox');
+
+    act(() => {
+      document.dispatchEvent(new Event('scroll', { bubbles: true }));
+    });
+
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+  });
+
+  it('depois da carência, sem teclado, scroll do usuário fecha', () => {
+    const nowSpy = vi.spyOn(Date, 'now');
+    const base = Date.now();
+    nowSpy.mockReturnValue(base);
+
+    try {
+      renderSelect();
+      fireEvent.click(screen.getByPlaceholderText('Selecione o país'));
+      expect(screen.getByRole('listbox')).toBeInTheDocument();
+
+      nowSpy.mockReturnValue(base + 1000);
+      act(() => {
+        document.dispatchEvent(new Event('scroll', { bubbles: true }));
+      });
+
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    } finally {
+      nowSpy.mockRestore();
+    }
+  });
+
+  it('mudanças do visualViewport (teclado aberto) nunca fecham', async () => {
+    const handlers: Record<string, Array<(event: Event) => void>> = {};
+    const fakeViewport = {
+      height: 400,
+      offsetTop: 0,
+      addEventListener: vi.fn((type: string, cb: EventListenerOrEventListenerObject) => {
+        (handlers[type] ??= []).push(cb as (event: Event) => void);
+      }),
+      removeEventListener: vi.fn((type: string, cb: EventListenerOrEventListenerObject) => {
+        handlers[type] = (handlers[type] ?? []).filter((h) => h !== cb);
+      }),
+    };
+    Object.defineProperty(window, 'visualViewport', {
+      value: fakeViewport,
+      configurable: true,
+    });
+
+    try {
+      const user = userEvent.setup();
+      renderSelect();
+
+      await user.click(screen.getByPlaceholderText('Selecione o país'));
+      await screen.findByRole('listbox');
+      expect(handlers.resize?.length).toBeGreaterThan(0);
+
+      act(() => {
+        handlers.resize?.forEach((h) => h(new Event('resize')));
+        handlers.scroll?.forEach((h) => h(new Event('scroll')));
+      });
+
+      expect(screen.getByRole('listbox')).toBeInTheDocument();
+    } finally {
+      Reflect.deleteProperty(window, 'visualViewport');
+    }
   });
 });
