@@ -17,6 +17,10 @@ function normalize(value: string): string {
   return value.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 }
 
+// Tempo em que scroll/resize após a abertura são tratados como efeitos do
+// teclado virtual abrindo no celular, não como gesto do usuário.
+const OPEN_GRACE_MS = 700;
+
 export function SearchableSelect({
   options,
   value,
@@ -47,6 +51,7 @@ export function SearchableSelect({
   const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const openedAtRef = useRef(0);
   const listId = useId();
 
   useEffect(() => {
@@ -70,22 +75,69 @@ export function SearchableSelect({
 
   useEffect(() => {
     if (!open) return;
+
+    function keyboardOpen(): boolean {
+      const vv = window.visualViewport;
+      return vv != null && vv.height < window.innerHeight - 100;
+    }
+
+    // Popover é fixed: com o teclado virtual aberto, abre acima do campo
+    // quando não houver espaço embaixo, para busca e lista ficarem visíveis.
+    function reposition() {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const vv = window.visualViewport;
+      const visibleBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+      const popoverHeight = popoverRef.current?.offsetHeight ?? 0;
+      const openUp = popoverHeight > 0 && visibleBottom - rect.bottom < popoverHeight + 8;
+      setPos({
+        top: openUp ? Math.max(4, rect.top - popoverHeight - 4) : rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      });
+    }
+
     function onScroll(event: Event) {
       // Ignora scroll originado dentro do popover (lista interna) —
       // senão deslizar a lista fecha o select no meio do gesto.
-      if (popoverRef.current?.contains(event.target as Node)) {
+      const target = event.target;
+      if (target instanceof Node && popoverRef.current?.contains(target)) {
+        return;
+      }
+      // No celular, o autofocus da busca abre o teclado e a viewport se
+      // ajusta com scroll/resize sintéticos. Fechar aqui engolia o select
+      // e o teclado juntos; reposicionamos e mantemos aberto.
+      if (Date.now() - openedAtRef.current < OPEN_GRACE_MS || keyboardOpen()) {
+        reposition();
         return;
       }
       setOpen(false);
     }
+
     function onResize() {
+      if (Date.now() - openedAtRef.current < OPEN_GRACE_MS || keyboardOpen()) {
+        reposition();
+        return;
+      }
       setOpen(false);
     }
+
+    // Mudanças do visualViewport são o teclado virtual: nunca fecham,
+    // apenas reposicionam.
+    function onViewportChange() {
+      reposition();
+    }
+
+    const viewport = window.visualViewport;
     window.addEventListener("scroll", onScroll, true);
     window.addEventListener("resize", onResize);
+    viewport?.addEventListener("resize", onViewportChange);
+    viewport?.addEventListener("scroll", onViewportChange);
     return () => {
       window.removeEventListener("scroll", onScroll, true);
       window.removeEventListener("resize", onResize);
+      viewport?.removeEventListener("resize", onViewportChange);
+      viewport?.removeEventListener("scroll", onViewportChange);
     };
   }, [open]);
 
@@ -93,6 +145,7 @@ export function SearchableSelect({
     if (disabled) return;
     const rect = containerRef.current?.getBoundingClientRect();
     if (rect) setPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+    openedAtRef.current = Date.now();
     setOpen((v) => !v);
   }
 
